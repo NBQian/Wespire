@@ -108,30 +108,25 @@ class PDF(FPDF):
 
 
 def generate_table_image(plan, table_img_path):
-    # Set font to monospaced for uniform character width
     plt.rcParams.update({'font.family':'monospace'})
     
-    fig, ax = plt.subplots(figsize=(4, 1))  # Adjust figure size as needed
+    fig, ax = plt.subplots(figsize=(4, 1))
     ax.axis('off')  # Hide the axes
 
-    # Prepare cell text with "Name: Value" format, aligned using spaces
     cell_text = [
         [f"Current Coverage:    S${plan.CurrentSumAssured:,.2f}"],
         [f"Suggested Coverage:  S${plan.RecommendedSumAssured:,.2f}"],
         [f"Shortfall:           S${plan.Shortfall:,.2f}"]
     ]
 
-    # Create the table
     table = ax.table(cellText=cell_text, loc='center', cellLoc='left', edges='horizontal')
     table.auto_set_font_size(False)
     table.set_fontsize(10)
-    table.scale(1, 1.5)  # Adjust scale to fit your text or layout
+    table.scale(1, 1.5)
 
-        # Set horizontal line color to grey
-    grey_color = "#808080"  # Define your preferred shade of grey using hex color codes
+    grey_color = "#808080"
     for pos, cell in table.get_celld().items():
-        cell.set_edgecolor(grey_color)  # Apply grey color to all cell borders
-        # Optionally adjust to target only specific edges if needed
+        cell.set_edgecolor(grey_color)
 
     plt.savefig(table_img_path, dpi=300, bbox_inches="tight", pad_inches=0.05)
     plt.close()
@@ -139,25 +134,77 @@ def generate_table_image(plan, table_img_path):
 
 
 
-def generate_pdf(student_summary):
+def generate_pdf(student_summary, user):
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
     pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
     if not os.path.exists(pdf_dir):
         os.makedirs(pdf_dir)
     pdf_path = os.path.join(pdf_dir, filename)
-    
-    pdf = PDF(orientation='P', unit='mm', format='A4')
-    pdf.add_page()
 
     plans = FuturePlan.objects.filter(unique_code=student_summary.unique_code)[:5]
 
-    # Define sizes and positions for larger charts
-    chart_width_mm = 70  # Increase chart size
-    x_positions = [20, 110]  # Adjust positions for larger charts
-    y_positions = [20, 110, 200]  # Adjust vertical spacing for larger charts
+    current_dir = os.path.dirname(__file__)
+    cover_img_path = os.path.join(current_dir, 'img', 'Cover.png')
 
-    # Create a single legend for all pie charts
-    labels = ['CurrentSumAssured', 'RecommendedSumAssured']
+    
+    pdf = PDF(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    pdf.image(cover_img_path, 0, 0, 210, 297)
+    client_name = f"{student_summary.student.FirstName} {student_summary.student.LastName}"
+    user_name = user.name
+    add_text_annotations(pdf, client_name, user_name)
+
+
+
+    pdf.add_page()
+    
+    generate_pie_charts(student_summary, pdf, pdf_dir, plans)
+
+    pdf.output(pdf_path)
+
+    return os.path.join('client_summaries', filename)
+
+
+def add_text_annotations(pdf, client_name, user_name):
+    text1 = f"For {client_name}"
+    # Prepare text2 as before; its positioning remains unchanged
+    text2 = f"Prepared by {user_name}"
+
+    # Convert 4.25 cm to mm (FPDF unit), as FPDF's default unit is mm
+    y1 = 107.95  # 4.25 cm
+
+    # Set font before calculating text width for accurate measurement
+    pdf.set_font('Times', 'B', 20)
+
+    # Calculate width of text1 to center it
+    text1_width = pdf.get_string_width(text1)
+    page_width = pdf.w  # Width of the current page
+    x1 = (page_width - text1_width) / 2  # Center the text
+
+    # Set vertical position and add the centered text1
+    pdf.set_xy(x1, y1)
+    pdf.cell(text1_width, 10, text1, 0, 1, 'C')  # The 'C' align parameter centers the text in the cell
+
+    r, g, b = 255, 255, 255
+
+    pdf.set_text_color(r, g, b)
+    # For text2, position as previously defined (unchanged from your original)
+    x2, y2 = 50.8, 259.08  # Assuming y2 is also in mm
+
+    pdf.set_xy(x2, y2)
+    pdf.cell(text1_width, 10, text2, 0, 1, 'C')
+
+
+
+
+def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
+    
+
+    chart_width_mm = 70
+    x_positions = [20, 110]
+    y_positions = [20, 110, 200]
+
+    labels = ['CurrentSumAssured', 'Shortfall']
     colors = ['#1E62AB','#F2BE37']
     plt.figure(figsize=(2, 2))  # Dummy figure for legend
     plt.pie([1, 1], labels=labels, colors=colors)
@@ -167,40 +214,27 @@ def generate_pdf(student_summary):
     plt.close()
 
     for i, plan in enumerate(plans):
-        # Calculate position for this chart
         x_position = x_positions[i % 2]
         y_position = y_positions[i // 2]
 
-        # Generate pie chart without legend
-        sizes = [float(plan.CurrentSumAssured), float(plan.RecommendedSumAssured)]
+        sizes = [float(plan.CurrentSumAssured), float(plan.Shortfall)]
         fig, ax = plt.subplots(figsize=(4, 3))  # Increased figure size
         ax.pie(sizes, colors=colors, autopct='%1.1f%%', startangle=90)
-        # fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
-        # Adding the title as an annotation to avoid affecting chart size
         ax.annotate(plan.Type, xy=(0.5, 0.95), xycoords='axes fraction', ha='center', fontsize=7, fontweight="bold")
         img_path = os.path.join(pdf_dir, f"pie_chart_{i}.png")
         plt.savefig(img_path, dpi=300, bbox_inches='tight', pad_inches=0)
 
         plt.close()
-
-        # Place pie chart in PDF
         
         pdf.image(img_path, x=x_position, y=y_position, w=chart_width_mm)
         os.remove(img_path)
 
-        # Generate and add table image below the pie chart
         table_img_path = os.path.join(pdf_dir, f"table_{i}.png")
         generate_table_image(plan, table_img_path)
 
-        # Adjust Y position to place the table below the pie chart
-        table_y_position = y_positions[i // 2] + 65  # Add a small gap between the chart and the table
+        table_y_position = y_positions[i // 2] + 65
         pdf.image(table_img_path, x=x_positions[i % 2], y=table_y_position, w=chart_width_mm)
         os.remove(table_img_path)
 
-    # Place the legend at the bottom right of the page
-    pdf.image(legend_path, x=160, y=260, w=40)  # Adjust position and size as necessary
-    os.remove(legend_path)  # Clean up the legend image
-
-    pdf.output(pdf_path)
-
-    return os.path.join('client_summaries', filename)
+    pdf.image(legend_path, x=160, y=260, w=40)
+    os.remove(legend_path)

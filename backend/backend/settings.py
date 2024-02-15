@@ -34,6 +34,7 @@ INSTALLED_APPS = [
 	"djoser",
     "corsheaders",
 	'django_cleanup.apps.CleanupConfig',
+	"rest_framework.authtoken"
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -69,7 +70,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -131,6 +131,10 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 REST_FRAMEWORK = {
+	   'DEFAULT_AUTHENTICATION_CLASSES': (
+       'rest_framework.authentication.TokenAuthentication',
+	   'rest_framework.authentication.SessionAuthentication',
+   ),
 	'DEFAULT_PERMISSION_CLASSES': [
 		'rest_framework.permissions.IsAuthenticated'
     ],

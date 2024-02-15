@@ -19,6 +19,7 @@ class StudentSummary(models.Model):
     unique_code = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.datetime.now)
     pdf_file = models.FileField(upload_to='client_summaries/', blank=True, null=True)
+    # agent name
 
     def delete(self, *args, **kwargs):
         if self.pdf_file:

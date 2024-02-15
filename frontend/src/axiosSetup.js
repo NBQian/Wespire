@@ -1,4 +1,3 @@
-// src/axiosSetup.js
 import axios from "axios";
 import store from "./store";
 import { refreshAccessToken, logout } from "./actions/auth";
@@ -24,22 +23,19 @@ axios.interceptors.response.use(
         if (error.response.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                // Attempt to refresh token only if the failing request is not a refresh token request
                 if (!originalRequest.url.includes("/auth/jwt/refresh/")) {
-                    await store.dispatch(refreshAccessToken()); // Attempt to refresh token
+                    await store.dispatch(refreshAccessToken());
                     const state = store.getState();
                     const newToken = state.auth.access;
                     originalRequest.headers[
                         "Authorization"
                     ] = `JWT ${newToken}`;
-                    return axios(originalRequest); // Retry the original request with new token
+                    return axios(originalRequest);
                 }
             } catch (refreshError) {
-                // Handle failure: e.g., logout user or redirect to login
                 return Promise.reject(refreshError);
             }
         }
-        // If refresh token request itself fails, do not retry
         return Promise.reject(error);
     }
 );

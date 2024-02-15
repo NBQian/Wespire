@@ -55,7 +55,7 @@ const futurePlanTypes = [
     "Death",
     "Total Permanent Disability",
     "Critical Illness",
-    "Accidental Death & Disablement Benefits",
+    "Accidental Death & Disablement",
     "Monthly Disability",
 ];
 

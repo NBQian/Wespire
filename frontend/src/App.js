@@ -7,13 +7,14 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 import { Provider } from "react-redux";
 import store from "./store";
 import "./axiosSetup";
+import history from "./history";
 
 function App() {
     return (
         <Provider store={store}>
             <BrowserRouter>
                 <Layout>
-                    <ProtectedRoutes /> {/* Use the new component here */}
+                    <ProtectedRoutes />
                 </Layout>
             </BrowserRouter>
         </Provider>

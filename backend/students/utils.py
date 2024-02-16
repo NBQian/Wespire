@@ -17,86 +17,6 @@ from reportlab.graphics.charts.piecharts import Pie
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.styles import getSampleStyleSheet
-
-
-
-
-
-# def generate_pdf(student_summary):
-    # filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
-    # pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
-    # if not os.path.exists(pdf_dir):
-    #     os.makedirs(pdf_dir)
-    # pdf_path = os.path.join(pdf_dir, filename)
-    
-#     doc = SimpleDocTemplate(pdf_path, pagesize=landscape(letter))
-#     elements = []
-#     styles = getSampleStyleSheet()
-
-    
-#     # Fetch products and future plans
-#     products = Product.objects.filter(unique_code=student_summary.unique_code)
-#     plans = FuturePlan.objects.filter(unique_code=student_summary.unique_code)
-
-#     # # Tables for product sections
-#     # sections = [
-#     #     [("Company", "Company"), ("Product Number", "ProductNumber"), ("Product Name", "ProductName"), ("Type", "Type")],
-#     #     [("Whole Life", "WholeLife"), ("Endowment", "Endowment"), ("Term", "Term"), ("Inv.Linked", "InvLinked"), ("Total Death Coverage", "TotalDeathCoverage"), ("Total Permanent Disability", "TotalPermanentDisability")],
-#     #     [("Early Critical Illness", "EarlyCriticalIllness"), ("Accidental", "Accidental"), ("Other Benefits/Remarks", "OtherBenefitsRemarks"), ("Mode", "Mode"), ("Monthly", "Monthly"), ("Quarterly", "Quarterly")],
-#     #     [("Semi-Annual", "SemiAnnual"), ("Yearly", "Yearly"), ("Maturity/Premium End Date", "MaturityPremiumEndDate"), ("Current Value", "CurrentValue"), ("Total Premiums Paid", "TotalPremiumsPaid")]
-#     # ]
-    
-#     # for section in sections:
-#         # header = [col[0] for col in section]
-#         # product_data = [header]
-        
-#         # for product in products:
-#         #     row = [getattr(product, col[1]) for col in section]
-#         #     product_data.append(row)
-        
-#         # table = Table(product_data)
-#         # table.setStyle(TableStyle([
-#         #     ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-#         #     ('GRID', (0, 0), (-1, -1), 1, colors.black),
-#         # ]))
-#         # elements.append(table)
-    
-#     # Generate pie charts for future plans
-#     for plan in plans:
-#         # Convert Decimal to float for compatibility with ReportLab
-#         data = [float(plan.CurrentSumAssured), float(plan.RecommendedSumAssured)]
-#         labels = ['Current', 'Recommended']
-
-#         drawing = Drawing(200, 100)  # Adjust size as needed
-#         pie = Pie()
-#         pie.x = 65
-#         pie.y = 15
-#         pie.width = 70
-#         pie.height = 70
-#         pie.data = data
-#         pie.labels = labels
-#         pie.slices.strokeWidth = 0.5
-#         pie.slices[0].popout = 10
-#         pie.slices[1].popout = 5
-#         pie.slices[0].strokeWidth = 2
-#         pie.slices[1].strokeWidth = 2
-#         pie.slices[0].fillColor = colors.lightblue
-#         pie.slices[1].fillColor = colors.lightgreen
-
-#         drawing.add(pie)
-        
-#         elements.append(Paragraph(plan.Type, styles['Heading2']))
-#         elements.append(drawing)
-#         elements.append(Spacer(1, 20))  # Adds space between each chart
-
-
-#     # Write the document to disk
-#     doc.build(elements)
-#     return os.path.join('client_summaries', filename)
-
-#     # Write the document to disk
-#     doc.build(elements)
-#     return os.path.join('client_summaries', filename)
 from fpdf import FPDF
 import matplotlib.pyplot as plt
 import os
@@ -196,45 +116,66 @@ def add_text_annotations(pdf, client_name, user_name):
 
 
 
+from matplotlib.patches import Circle
+import matplotlib.pyplot as plt
+import os
 
 def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
-    
-
-    chart_width_mm = 70
-    x_positions = [20, 110]
-    y_positions = [20, 110, 200]
+    chart_width_mm = 70  # Define the chart's width in mm for PDF placement
+    x_positions = [20, 110]  # X positions for charts on the PDF
+    y_positions = [20, 110, 200]  # Y positions for charts on the PDF
 
     labels = ['CurrentSumAssured', 'Shortfall']
-    colors = ['#1E62AB','#F2BE37']
-    plt.figure(figsize=(2, 2))  # Dummy figure for legend
+    colors = ['#293486', '#ebbb36']
+    legend_path = os.path.join(pdf_dir, "legend.png")
+
+    # Generate legend for pie charts
+    plt.figure(figsize=(2, 2))
     plt.pie([1, 1], labels=labels, colors=colors)
     plt.legend(loc="center")
-    legend_path = os.path.join(pdf_dir, "legend.png")
     plt.savefig(legend_path, bbox_inches='tight', pad_inches=0)
     plt.close()
 
+    # Path to the wheelchair image
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the script
+    wheelchair_img_path = os.path.join(script_dir, "img", "wheelchair.png")
+    
     for i, plan in enumerate(plans):
         x_position = x_positions[i % 2]
         y_position = y_positions[i // 2]
 
+        # Generate pie chart
         sizes = [float(plan.CurrentSumAssured), float(plan.Shortfall)]
-        fig, ax = plt.subplots(figsize=(4, 3))  # Increased figure size
-        ax.pie(sizes, colors=colors, autopct='%1.1f%%', startangle=90)
+        fig, ax = plt.subplots(figsize=(4, 3))
+        ax.pie(sizes, colors=colors, startangle=90)
+
+        # Add a white circle in the middle to create a donut-like appearance
+        centre_circle = Circle((0,0),0.60,fc='white')
+        fig.gca().add_artist(centre_circle)
+
         ax.annotate(plan.Type, xy=(0.5, 0.95), xycoords='axes fraction', ha='center', fontsize=7, fontweight="bold")
-        img_path = os.path.join(pdf_dir, f"pie_chart_{i}.png")
-        plt.savefig(img_path, dpi=300, bbox_inches='tight', pad_inches=0)
-
+        pie_chart_img_path = os.path.join(pdf_dir, f"pie_chart_{i}.png")
+        plt.savefig(pie_chart_img_path, dpi=300, bbox_inches='tight', pad_inches=0)
         plt.close()
-        
-        pdf.image(img_path, x=x_position, y=y_position, w=chart_width_mm)
-        os.remove(img_path)
 
+        # Add pie chart image to PDF
+        pdf.image(pie_chart_img_path, x=x_position, y=y_position, w=chart_width_mm)
+        os.remove(pie_chart_img_path)  # Clean up the pie chart image file
+        
+        # Overlay the wheelchair image at the center of the donut
+        wheelchair_size_mm = chart_width_mm * 0.3  # Adjust size as needed
+        wheelchair_x = x_position + (chart_width_mm - wheelchair_size_mm) / 2
+        wheelchair_y = y_position + (chart_width_mm - wheelchair_size_mm) / 2
+        pdf.image(wheelchair_img_path, x=wheelchair_x, y=wheelchair_y, w=wheelchair_size_mm, h=wheelchair_size_mm)
+
+        # Assuming you have a function `generate_table_image(plan, table_img_path)` defined elsewhere
         table_img_path = os.path.join(pdf_dir, f"table_{i}.png")
         generate_table_image(plan, table_img_path)
 
-        table_y_position = y_positions[i // 2] + 65
+        table_y_position = y_positions[i // 2] + 65  # Adjust based on the actual size of the pie charts
         pdf.image(table_img_path, x=x_positions[i % 2], y=table_y_position, w=chart_width_mm)
         os.remove(table_img_path)
 
+    # Place the legend on the PDF
     pdf.image(legend_path, x=160, y=260, w=40)
     os.remove(legend_path)

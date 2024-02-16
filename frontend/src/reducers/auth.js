@@ -18,6 +18,7 @@ import {
     FACEBOOK_AUTH_SUCCESS,
     FACEBOOK_AUTH_FAIL,
     LOGOUT,
+    TOKEN_EXPIRED,
 } from "../actions/types";
 
 const initialState = {
@@ -92,6 +93,17 @@ export default function (state = initialState, action) {
         case ACTIVATION_FAIL:
             return {
                 ...state,
+            };
+        case TOKEN_EXPIRED:
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+            return {
+                ...state,
+                access: null,
+                refresh: null,
+                isAuthenticated: false,
+                user: null,
+                error: "Session expired. Please login again.",
             };
         default:
             return state;

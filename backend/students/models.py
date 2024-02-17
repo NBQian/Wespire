@@ -9,7 +9,7 @@ class Student(models.Model):
     FirstName = models.CharField(max_length=100)
     LastName = models.CharField(max_length=100)
     RegistrationNo = models.CharField(max_length=100)
-    Email = models.CharField(max_length=100)
+    Email = models.EmailField(max_length=255, unique=True)
     Course = models.CharField(max_length=100)
     PhoneNumber = models.CharField(max_length=15, null = True, blank = True)
 
@@ -19,7 +19,11 @@ class StudentSummary(models.Model):
     unique_code = models.CharField(max_length=255, null=True, blank=True)
     date_created = models.DateTimeField(default=datetime.datetime.now)
     pdf_file = models.FileField(upload_to='client_summaries/', blank=True, null=True)
-    # agent name
+    DisplayedName = models.CharField(max_length=255)
+    DisplayedPhoneNumber = models.CharField(max_length=15)
+    DisplayedEmail = models.EmailField(max_length=255, unique=True)
+    DisplayedTitle = models.CharField(max_length=255)
+    MAS = models.CharField(max_length=255)
 
     def delete(self, *args, **kwargs):
         if self.pdf_file:

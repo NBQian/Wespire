@@ -18,6 +18,13 @@ import {
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+const emptySummaryTemplate = {
+    DisplayedName: "",
+    DisplayedPhoneNumber: "",
+    DisplayedEmail: "",
+    DisplayedTitle: "",
+    MAS: "",
+};
 const emptyProductTemplate = {
     Company: "",
     ProductNumber: "",
@@ -69,13 +76,20 @@ const StudentSummaryFormModal = ({
 }) => {
     const userId = useSelector((state) => state.auth.user.id);
     const [code, setCode] = useState("");
+    const [agent, setAgent] = useState([emptySummaryTemplate]);
     const [products, setProducts] = useState([emptyProductTemplate]);
     const [futurePlans, setFuturePlans] = useState([emptyFuturePlanTemplate]);
     const [currentPage, setCurrentPage] = useState(0);
-    const [stage, setStage] = useState("products");
+    const [stage, setStage] = useState("agent");
 
     useEffect(() => {
         if (modalProps.show) {
+            const savedAgentData = localStorage.getItem("agentData");
+            if (savedAgentData) {
+                setAgent([JSON.parse(savedAgentData)]);
+            } else {
+                setAgent([emptySummaryTemplate]); // Reset to empty template if no saved data
+            }
             if (isUpdate && summary) {
                 setCode(summary.unique_code); // Use existing unique_code for editing
                 // Fetch data for editing
@@ -86,8 +100,6 @@ const StudentSummaryFormModal = ({
                     const fetchedFuturePlans = await getFuturePlansByUniqueCode(
                         summary.unique_code
                     );
-                    console.log(fetchedProducts);
-                    console.log("Fetched Future Plans:", fetchedFuturePlans);
                     setProducts(
                         fetchedProducts.length
                             ? fetchedProducts
@@ -127,7 +139,7 @@ const StudentSummaryFormModal = ({
                 }))
             );
             setCurrentPage(0);
-            setStage("products");
+            setStage("agent");
         }
     }, [modalProps.show]);
 
@@ -228,6 +240,12 @@ const StudentSummaryFormModal = ({
         return "";
     };
 
+    const handleAgentChange = (event) => {
+        const newagent = [...agent];
+        newagent[0][event.target.name] = event.target.value;
+        setAgent(newagent);
+    };
+
     const handleProductChange = (event) => {
         const updatedProducts = [...products];
         updatedProducts[currentPage][event.target.name] = event.target.value;
@@ -261,6 +279,10 @@ const StudentSummaryFormModal = ({
         setCurrentPage(Math.max(currentPage - 1, 0));
     };
 
+    const switchToAgent = () => {
+        setStage("agent");
+    };
+
     const switchToFuturePlans = () => {
         setStage("futurePlans");
         setCurrentPage(0);
@@ -272,6 +294,16 @@ const StudentSummaryFormModal = ({
     };
 
     const submitAll = async (e) => {
+        try {
+            // Your existing submission logic
+
+            // Save agent data to localStorage after successful submission
+            localStorage.setItem("agentData", JSON.stringify(agent[0]));
+
+            onHide(); // Close the modal after successful submission
+        } catch (error) {
+            console.error("Error submitting data: ", error);
+        }
         e.preventDefault(); // Prevent default form submission
         const validationMessage = validateFields();
         if (validationMessage !== "") {
@@ -300,13 +332,17 @@ const StudentSummaryFormModal = ({
 
             // Update the student summary if editing
             if (isUpdate && summary.id) {
+                const readyAgent = agent[0];
                 await updateStudentSummary(summary.id, {
+                    ...agent[0],
                     student: summary.student.studentId,
                 });
                 setUpdated(true);
             } else {
                 // Create the student summary if adding new
+
                 await addStudentSummary({
+                    ...agent[0],
                     // Assuming addStudentSummary doesn't need an id and creates a new entry.
                     unique_code: code,
                     // Include other necessary fields for creating a student summary.
@@ -330,10 +366,48 @@ const StudentSummaryFormModal = ({
         >
             <Modal.Header closeButton>
                 <Modal.Title id="contained-modal-title-vcenter">
-                    Product Information
+                    Overall Coverage Summary
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body>
+                {stage === "agent" && (
+                    <Form onSubmit={submitAll}>
+                        <h5>Displayed Agent Information</h5>
+                        {Object.keys(emptySummaryTemplate).map((field) => {
+                            const label = field
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase());
+                            return (
+                                <Form.Group key={field}>
+                                    <Form.Label>{label}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name={field}
+                                        value={agent[0][field] || ""}
+                                        onChange={handleAgentChange}
+                                    />
+                                </Form.Group>
+                            );
+                        })}
+                        <div className="d-flex justify-content-between mt-3">
+                            <Button
+                                variant="secondary"
+                                onClick={switchToProducts}
+                            >
+                                Edit Products
+                            </Button>
+                        </div>
+                        {isUpdate && (
+                            <Button
+                                variant="success"
+                                type="submit"
+                                className="w-100 mt-3"
+                            >
+                                Submit All
+                            </Button>
+                        )}
+                    </Form>
+                )}
                 {stage === "products" && (
                     <Form onSubmit={submitAll}>
                         <h5>Product {currentPage + 1}</h5>
@@ -395,13 +469,22 @@ const StudentSummaryFormModal = ({
                         })}
 
                         <div className="d-flex justify-content-between mt-3">
-                            <Button
-                                variant="secondary"
-                                onClick={goToPreviousItem}
-                                disabled={currentPage === 0}
-                            >
-                                Previous
-                            </Button>
+                            {currentPage === 0 ? (
+                                <Button
+                                    variant="secondary"
+                                    onClick={switchToAgent}
+                                >
+                                    Edit Agent Info
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="secondary"
+                                    onClick={goToPreviousItem}
+                                >
+                                    Previous
+                                </Button>
+                            )}
+
                             <Button
                                 variant="danger"
                                 onClick={removeCurrentProduct}

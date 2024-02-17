@@ -28,7 +28,7 @@ class FuturePlanSerializer(serializers.ModelSerializer):
 class StudentSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentSummary
-        fields = ['id', 'unique_code', 'date_created', 'pdf_file', 'student']
+        fields = '__all__'
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

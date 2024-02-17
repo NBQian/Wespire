@@ -119,30 +119,42 @@ def add_text_annotations(pdf, client_name, user_name):
 from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 import os
+from matplotlib.patches import Patch
+
 
 def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    header_path = os.path.join(script_dir, "img", "LHPie.png")
+    pdf.image(header_path, x = 0, y = 0, w = 210)
     chart_width_mm = 70  # Define the chart's width in mm for PDF placement
     x_positions = [20, 110]  # X positions for charts on the PDF
     y_positions = [20, 110, 200]  # Y positions for charts on the PDF
 
-    labels = ['CurrentSumAssured', 'Shortfall']
+    labels = ['Current Coverage', 'Shortfall']
     colors = ['#293486', '#ebbb36']
     legend_path = os.path.join(pdf_dir, "legend.png")
 
-    # Generate legend for pie charts
-    plt.figure(figsize=(2, 2))
-    plt.pie([1, 1], labels=labels, colors=colors)
-    plt.legend(loc="center")
-    plt.savefig(legend_path, bbox_inches='tight', pad_inches=0)
-    plt.close()
+    patches = [Patch(color=color, label=label) for label, color in zip(labels, colors)]
 
-    # Path to the wheelchair image
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the script
-    wheelchair_img_path = os.path.join(script_dir, "img", "wheelchair.png")
+    # Create a new figure
+    fig = plt.figure(figsize=(2, 2))
+    # Add a legend to the figure, not to an Axes
+    fig.legend(handles=patches, loc='center', frameon=False)
+
+    # Save just the legend as an image
+    fig.savefig(legend_path, bbox_inches='tight', pad_inches=0, transparent=True, dpi = 300)
+    plt.close(fig)
+
+    
+    
     
     for i, plan in enumerate(plans):
-        x_position = x_positions[i % 2]
-        y_position = y_positions[i // 2]
+        if i == 4:
+            x_position = 65
+            y_position = y_positions[i // 2]
+        else:
+            x_position = x_positions[i % 2]
+            y_position = y_positions[i // 2]
 
         # Generate pie chart
         sizes = [float(plan.CurrentSumAssured), float(plan.Shortfall)]
@@ -163,17 +175,18 @@ def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
         os.remove(pie_chart_img_path)  # Clean up the pie chart image file
         
         # Overlay the wheelchair image at the center of the donut
-        wheelchair_size_mm = chart_width_mm * 0.3  # Adjust size as needed
-        wheelchair_x = x_position + (chart_width_mm - wheelchair_size_mm) / 2
-        wheelchair_y = y_position + (chart_width_mm - wheelchair_size_mm) / 2
-        pdf.image(wheelchair_img_path, x=wheelchair_x, y=wheelchair_y, w=wheelchair_size_mm, h=wheelchair_size_mm)
+        center_img_path = os.path.join(script_dir, "img", f"img{i}.png")
+        img_size = chart_width_mm * 0.3  # Adjust size as needed
+        img_x = x_position + (chart_width_mm - img_size) / 2
+        img_y = y_position + (chart_width_mm - img_size) / 2
+        pdf.image(center_img_path, x=img_x, y=img_y, w=img_size, h=img_size)
 
         # Assuming you have a function `generate_table_image(plan, table_img_path)` defined elsewhere
         table_img_path = os.path.join(pdf_dir, f"table_{i}.png")
         generate_table_image(plan, table_img_path)
 
         table_y_position = y_positions[i // 2] + 65  # Adjust based on the actual size of the pie charts
-        pdf.image(table_img_path, x=x_positions[i % 2], y=table_y_position, w=chart_width_mm)
+        pdf.image(table_img_path, x=x_position, y=table_y_position, w=chart_width_mm)
         os.remove(table_img_path)
 
     # Place the legend on the PDF

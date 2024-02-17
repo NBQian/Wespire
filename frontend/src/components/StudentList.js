@@ -36,16 +36,6 @@ const StudentList = () => {
         });
     }, [isUpdated]);
 
-    const tableStyle = {
-        "& .MuiTableCell-root": {
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            padding: { xs: "6px", sm: "16px" },
-            "& .MuiTableCell-head": {
-                fontSize: { xs: "0.25rem", sm: "0.875rem" },
-            },
-        },
-    };
-
     const columns = useMemo(
         () => [
             {
@@ -132,13 +122,13 @@ const StudentList = () => {
         data: students,
         enableColumnFilterModes: true,
         enableColumnOrdering: true,
-        enableGrouping: true,
+        enableGrouping: false,
         enableColumnPinning: true,
         enableFacetedValues: true,
         enableRowActions: true,
         initialState: {
             showColumnFilters: false,
-            showGlobalFilter: true,
+            showGlobalFilter: false,
             columnPinning: {
                 left: ["mrt-row-expand", "mrt-row-select"],
                 right: ["mrt-row-actions"],
@@ -147,6 +137,7 @@ const StudentList = () => {
         paginationDisplayMode: "pages",
         positionToolbarAlertBanner: "bottom",
         muiSearchTextFieldProps: {
+            placeholder: "Search All Fields",
             size: "small",
             variant: "outlined",
         },
@@ -155,14 +146,6 @@ const StudentList = () => {
             rowsPerPageOptions: [10, 20, 30],
             shape: "rounded",
             variant: "outlined",
-        },
-        muiTableContainerProps: {
-            sx: {
-                "& .MuiTableCell-root": {
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                },
-                overflowX: "auto",
-            },
         },
 
         renderDetailPanel: ({ row }) => (
@@ -247,7 +230,6 @@ const StudentList = () => {
                             alignItems: "center",
                         }}
                     >
-                        <MRT_GlobalFilterTextField table={table} />
                         <MRT_ToggleFiltersButton table={table} />
                     </Box>
                     <Box sx={{ display: "flex", gap: "0.5rem" }}>
@@ -257,6 +239,10 @@ const StudentList = () => {
                             variant="contained"
                         >
                             <i className="bi bi-person-fill-add"></i>
+
+                            <span className="d-none d-sm-inline ms-2">
+                                Add Client
+                            </span>
                         </Button>
                     </Box>
                 </Box>
@@ -266,11 +252,8 @@ const StudentList = () => {
 
     return (
         <div>
-            <div style={{ display: "grid" }}>
-                {" "}
-                <MaterialReactTable table={table} sx={tableStyle} />
-            </div>
-
+            <MaterialReactTable table={table} />
+            ;
             <StudentFormModal
                 show={modalShow}
                 onHide={modalClose}
@@ -278,13 +261,11 @@ const StudentList = () => {
                 student={currentStudent}
                 isUpdate={currentStudent != null}
             />
-
             <DeleteConfirmation
                 show={showDeleteConfirm}
                 onConfirm={confirmDelete}
                 onCancel={cancelDelete}
             />
-
             <StudentSummaryFormModal
                 show={showSummaryModal}
                 setUpdated={setIsUpdated}

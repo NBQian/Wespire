@@ -2,8 +2,18 @@ import React, { useMemo, useState, useEffect } from "react";
 import {
     MaterialReactTable,
     useMaterialReactTable,
+    MRT_GlobalFilterTextField,
+    MRT_ToggleFiltersButton,
 } from "material-react-table";
-import { MenuItem, ListItemIcon } from "@mui/material";
+
+import {
+    Box,
+    Typography,
+    Button,
+    MenuItem,
+    ListItemIcon,
+    lighten,
+} from "@mui/material";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { FaEdit, FaFilePdf } from "react-icons/fa";
 import {
@@ -59,16 +69,6 @@ const StudentSummaryList = () => {
 
     const modalClose = () => setModalShow(false);
 
-    const tableStyle = {
-        "& .MuiTableCell-root": {
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            padding: { xs: "6px", sm: "16px" },
-            "& .MuiTableCell-head": {
-                fontSize: { xs: "0.25rem", sm: "0.875rem" },
-            },
-        },
-    };
-
     const columns = useMemo(
         () => [
             {
@@ -94,13 +94,12 @@ const StudentSummaryList = () => {
         data: summaries,
         enableColumnFilterModes: true,
         enableColumnOrdering: true,
-        enableGrouping: true,
         enableColumnPinning: true,
         enableFacetedValues: true,
         enableRowActions: true,
         initialState: {
             showColumnFilters: false,
-            showGlobalFilter: true,
+            showGlobalFilter: false,
             columnPinning: {
                 left: ["mrt-row-expand", "mrt-row-select"],
                 right: ["mrt-row-actions"],
@@ -108,10 +107,6 @@ const StudentSummaryList = () => {
         },
         paginationDisplayMode: "pages",
         positionToolbarAlertBanner: "bottom",
-        muiSearchTextFieldProps: {
-            size: "small",
-            variant: "outlined",
-        },
         muiPaginationProps: {
             color: "secondary",
             rowsPerPageOptions: [10, 20, 30],
@@ -168,14 +163,37 @@ const StudentSummaryList = () => {
                 Download PDF
             </MenuItem>,
         ],
+        renderTopToolbar: ({ table }) => {
+            return (
+                <Box
+                    sx={(theme) => ({
+                        backgroundColor: lighten(
+                            theme.palette.background.default,
+                            0.05
+                        ),
+                        display: "flex",
+                        gap: "0.5rem",
+                        p: "8px",
+                        justifyContent: "space-between",
+                    })}
+                >
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            alignItems: "center",
+                        }}
+                    >
+                        <MRT_ToggleFiltersButton table={table} />
+                    </Box>
+                </Box>
+            );
+        },
     });
 
     return (
         <div>
-            <div style={{ display: "grid" }}>
-                {" "}
-                <MaterialReactTable table={tableInstance} sx={tableStyle} />
-            </div>
+            <MaterialReactTable table={tableInstance} />
 
             <DeleteConfirmation
                 show={showDeleteConfirm}

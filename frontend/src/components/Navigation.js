@@ -57,7 +57,9 @@ const Navigation = () => {
                                 marginTop: "2px",
                             }}
                         >
-                            Logout
+                            <span className="d-none d-sm-inline me-4">
+                                Logout
+                            </span>
                         </span>
                     </Nav.Link>
                 </Nav>

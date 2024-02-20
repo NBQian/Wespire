@@ -5,6 +5,9 @@ from .models import Student, StudentSummary, Product, FuturePlan
 from .serializers import StudentSerializer, StudentSummarySerializer, ProductSerializer, FuturePlanSerializer
 from .utils import generate_pdf
 from rest_framework.permissions import IsAuthenticated
+from django.http import FileResponse
+from django.conf import settings
+
 
 
 class StudentViewSet(viewsets.ModelViewSet):
@@ -69,3 +72,13 @@ class FuturePlanViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(unique_code=unique_code)
         return queryset
 
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+class BaseView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        index_file_path = os.path.join(settings.BASE_DIR, 'build', 'index.html')
+        return FileResponse(open(index_file_path, 'rb'), content_type='text/html')

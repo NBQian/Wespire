@@ -21,7 +21,7 @@ class StudentSummary(models.Model):
     pdf_file = models.FileField(upload_to='client_summaries/', blank=True, null=True)
     DisplayedName = models.CharField(max_length=255)
     DisplayedPhoneNumber = models.CharField(max_length=15)
-    DisplayedEmail = models.EmailField(max_length=255, unique=True)
+    DisplayedEmail = models.EmailField(max_length=255)
     DisplayedTitle = models.CharField(max_length=255)
     MAS = models.CharField(max_length=255)
 
@@ -34,9 +34,9 @@ class StudentSummary(models.Model):
 
 class Product(models.Model):
     unique_code = models.CharField(max_length=255)
-    Company = models.CharField(max_length=100)
-    ProductNumber = models.CharField(max_length=100)
     ProductName = models.CharField(max_length=100)
+    ProductNumber = models.CharField(max_length=100)
+    Company = models.CharField(max_length=100)
     Date = models.DateField()
     Type = models.CharField(max_length=100)
     WholeLife = models.DecimalField(max_digits=10, decimal_places=2)

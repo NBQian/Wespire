@@ -27,7 +27,7 @@ class StudentSummaryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         student_summary = serializer.save(date_created=timezone.now())
-        pdf_file_path = generate_pdf(student_summary, self.request.user)
+        pdf_file_path = generate_pdf(student_summary)
         student_summary.pdf_file = pdf_file_path
         student_summary.save()
 
@@ -40,7 +40,7 @@ class StudentSummaryViewSet(viewsets.ModelViewSet):
                 os.remove(updated_summary.pdf_file.path)
 
         # Generate a new PDF
-        pdf_file_path = generate_pdf(updated_summary, self.request.user)
+        pdf_file_path = generate_pdf(updated_summary)
         updated_summary.pdf_file = pdf_file_path
 
         # Now save the instance to the database

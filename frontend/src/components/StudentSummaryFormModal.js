@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Spinner } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import {
     addProduct,
@@ -17,6 +17,7 @@ import {
 } from "../services/StudentSummaryService";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import GreenTick from "../static/check.png";
 
 const emptySummaryTemplate = {
     DisplayedName: "",
@@ -81,6 +82,20 @@ const StudentSummaryFormModal = ({
     const [futurePlans, setFuturePlans] = useState([emptyFuturePlanTemplate]);
     const [currentPage, setCurrentPage] = useState(0);
     const [stage, setStage] = useState("agent");
+
+    const [ellipsis, setEllipsis] = useState("");
+
+    useEffect(() => {
+        if (stage === "loading") {
+            const intervalId = setInterval(() => {
+                setEllipsis((prevEllipsis) =>
+                    prevEllipsis.length < 16 ? prevEllipsis + ". " : "  "
+                );
+            }, 500); // Adjust timing as needed
+
+            return () => clearInterval(intervalId);
+        }
+    }, [stage]);
 
     useEffect(() => {
         if (modalProps.show) {
@@ -294,22 +309,15 @@ const StudentSummaryFormModal = ({
     };
 
     const submitAll = async (e) => {
-        try {
-            // Your existing submission logic
-
-            // Save agent data to localStorage after successful submission
-            localStorage.setItem("agentData", JSON.stringify(agent[0]));
-
-            onHide(); // Close the modal after successful submission
-        } catch (error) {
-            console.error("Error submitting data: ", error);
-        }
+        localStorage.setItem("agentData", JSON.stringify(agent[0]));
         e.preventDefault(); // Prevent default form submission
+
         const validationMessage = validateFields();
         if (validationMessage !== "") {
             alert(validationMessage); // Alert the user to fill in the missing fields
             return; // Prevent form submission
         }
+        setStage("loading");
         try {
             // Handle products: update existing or add new ones
             const productPromises = products.map((product) =>
@@ -349,11 +357,13 @@ const StudentSummaryFormModal = ({
                     student: student.studentId,
                 });
             }
-
-            onHide(); // Close the modal after successful submission
+            setStage("success");
+            setTimeout(() => {
+                onHide();
+                setStage("agent");
+            }, 1000);
         } catch (error) {
             console.error("Error submitting data: ", error);
-            // Handle submission error (e.g., show an error message)
         }
     };
 
@@ -363,16 +373,55 @@ const StudentSummaryFormModal = ({
             aria-labelledby="contained-modal-title-vcenter"
             centered
             onHide={onHide}
+            backdrop={stage === "loading" ? "static" : true} // Prevent closing by clicking outside when loading
+            keyboard={stage !== "loading"}
         >
-            <Modal.Header closeButton>
-                <Modal.Title id="contained-modal-title-vcenter">
-                    Overall Coverage Summary
-                </Modal.Title>
-            </Modal.Header>
+            {stage !== "loading" && stage !== "success" ? (
+                // Render Modal.Header with closeButton when stage is not "loading" or "success"
+                <Modal.Header closeButton>
+                    <Modal.Title id="contained-modal-title-vcenter">
+                        {/* Title based on stage */}
+                    </Modal.Title>
+                </Modal.Header>
+            ) : (
+                // Render Modal.Header without closeButton when stage is "loading" or "success"
+                <Modal.Header>
+                    <Modal.Title
+                        id="contained-modal-title-vcenter"
+                        className="centered-modal-title"
+                    >
+                        {stage === "agent" && "Agent Information"}
+                        {stage === "products" &&
+                            `Product Details - ${currentPage + 1}`}
+                        {stage === "futurePlans" && "Overall Coverage Summary"}
+                        {stage === "loading" && (
+                            <div>Generating Report{ellipsis}</div>
+                        )}
+                        {stage === "success" && "Success !"}
+                    </Modal.Title>
+                </Modal.Header>
+            )}
             <Modal.Body>
+                {stage === "loading" && (
+                    <div className="text-center">
+                        <Spinner animation="border" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </Spinner>
+                    </div>
+                )}
+
+                {stage === "success" && (
+                    <div className="text-center">
+                        <img
+                            src={GreenTick}
+                            alt="Success"
+                            style={{ width: "100px", height: "100px" }}
+                        />
+                    </div>
+                )}
+
                 {stage === "agent" && (
                     <Form onSubmit={submitAll}>
-                        <h5>Displayed Agent Information</h5>
                         {Object.keys(emptySummaryTemplate).map((field) => {
                             const label = field
                                 .replace(/([A-Z])/g, " $1")
@@ -410,12 +459,30 @@ const StudentSummaryFormModal = ({
                 )}
                 {stage === "products" && (
                     <Form onSubmit={submitAll}>
-                        <h5>Product {currentPage + 1}</h5>
                         {Object.keys(emptyProductTemplate).map((field) => {
                             const label = field
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase());
-
+                            if (field === "OtherBenefitsRemarks") {
+                                return (
+                                    <Form.Group key={field}>
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={3} // Starting rows
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                            style={{
+                                                resize: "none",
+                                            }} // Optional: Prevent manual resizing
+                                        />
+                                    </Form.Group>
+                                );
+                            }
                             // Special handling for the Date field
                             if (field === "Date") {
                                 return (
@@ -526,14 +593,34 @@ const StudentSummaryFormModal = ({
                 )}
                 {stage === "futurePlans" && (
                     <Form onSubmit={submitAll}>
-                        <h5>
-                            Overall Coverage Summary:{" "}
-                            {futurePlans[currentPage]["Type"]}
-                        </h5>
                         {Object.keys(emptyFuturePlanTemplate).map((field) => {
+                            if (field === "Type") return null; // Skip rendering the "Type" field
+
                             const label = field
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase());
+
+                            if (field === "Remarks") {
+                                return (
+                                    <Form.Group key={field}>
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={3} // Starting rows
+                                            name={field}
+                                            value={
+                                                futurePlans[currentPage][
+                                                    field
+                                                ] || ""
+                                            }
+                                            onChange={handleFuturePlanChange}
+                                            style={{
+                                                resize: "none",
+                                            }} // Optional: Prevent manual resizing
+                                        />
+                                    </Form.Group>
+                                );
+                            }
                             return (
                                 <Form.Group key={field}>
                                     <Form.Label>{label}</Form.Label>

@@ -47,7 +47,7 @@ class Product(models.Model):
     TotalPermanentDisability = models.DecimalField(max_digits=10, decimal_places=2)
     EarlyCriticalIllness = models.DecimalField(max_digits=10, decimal_places=2)
     Accidental = models.DecimalField(max_digits=10, decimal_places=2)
-    OtherBenefitsRemarks = models.TextField()
+    OtherBenefitsRemarks = models.TextField(blank = True, null = True)
     Mode = models.CharField(max_length=100)
     Monthly = models.DecimalField(max_digits=10, decimal_places=2)
     Quarterly = models.DecimalField(max_digits=10, decimal_places=2)
@@ -63,7 +63,7 @@ class FuturePlan(models.Model):
     CurrentSumAssured = models.DecimalField(max_digits=10, decimal_places=2)
     RecommendedSumAssured = models.DecimalField(max_digits=10, decimal_places=2)
     Shortfall = models.DecimalField(max_digits=10, decimal_places=2)
-    Remarks = models.TextField()
+    Remarks = models.TextField(blank = True, null = True)
 
 class UserAccountManager(BaseUserManager):
     def create_user(self, email, name, password=None):

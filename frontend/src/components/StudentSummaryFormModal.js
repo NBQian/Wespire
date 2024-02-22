@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Spinner } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import {
@@ -55,7 +55,6 @@ const emptyFuturePlanTemplate = {
     Type: "",
     CurrentSumAssured: "",
     RecommendedSumAssured: "",
-    Shortfall: "",
     Remarks: "",
 };
 
@@ -91,7 +90,7 @@ const StudentSummaryFormModal = ({
                 setEllipsis((prevEllipsis) =>
                     prevEllipsis.length < 16 ? prevEllipsis + ". " : "  "
                 );
-            }, 500); // Adjust timing as needed
+            }, 500);
 
             return () => clearInterval(intervalId);
         }
@@ -198,60 +197,59 @@ const StudentSummaryFormModal = ({
             "TotalPremiumsPaid",
         ];
 
-        for (let i = 0; i < products.length; i++) {
-            for (let key in products[i]) {
-                if (products[i][key] === "") {
+        products.forEach((product, i) => {
+            Object.keys(product).forEach((key) => {
+                if (decimalFields1.includes(key) && product[key] === "") {
+                    product[key] = "0"; // Set empty decimal fields to "0"
+                } else if (
+                    decimalFields1.includes(key) &&
+                    !isDecimalValid(product[key].toString())
+                ) {
                     return `Product ${i + 1}: ${key
                         .replace(/([A-Z])/g, " $1")
                         .replace(/^./, (str) =>
                             str.toUpperCase()
-                        )} is missing.`;
-                } else if (decimalFields1.includes(key)) {
-                    if (!isDecimalValid(products[i][key].toString())) {
-                        return `Product ${i + 1}: ${key
-                            .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (str) =>
-                                str.toUpperCase()
-                            )} must be a valid decimal number.`;
-                    }
+                        )} must be a valid decimal number.`;
                 }
-            }
-            if (!isDateValid(products[i]["Date"])) {
+            });
+
+            if (!isDateValid(product["Date"])) {
                 return `Product ${
                     i + 1
                 }: Date must be in the format YYYY-MM-DD.`;
             }
-        }
+        });
 
         // Validate Future Plan Fields
-        const decimalFields2 = [
-            "CurrentSumAssured",
-            "RecommendedSumAssured",
-            "Shortfall",
-        ];
+        const decimalFields2 = ["CurrentSumAssured", "RecommendedSumAssured"];
 
         for (let i = 0; i < futurePlans.length; i++) {
-            for (let key in futurePlans[i]) {
-                if (futurePlans[i][key] === "") {
-                    // Assuming the Type field is always filled for future plans. Adjust if necessary.
-                    return `Overall Summary: ${futurePlans[i].Type} - ${key
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) =>
-                            str.toUpperCase()
-                        )} is missing.`;
-                } else if (decimalFields2.includes(key)) {
-                    if (!isDecimalValid(futurePlans[i][key].toString())) {
-                        return `Overall Summary: ${futurePlans[i].Type} - ${key
-                            .replace(/([A-Z])/g, " $1")
-                            .replace(/^./, (str) =>
-                                str.toUpperCase()
-                            )} must be a valid decimal number.`;
-                    }
+            decimalFields2.forEach((field) => {
+                if (futurePlans[i][field] === "") {
+                    futurePlans[i][field] = "0"; // Set empty decimal fields to "0"
                 }
+            });
+
+            if (
+                !isDecimalValid(
+                    futurePlans[i]["CurrentSumAssured"].toString()
+                ) ||
+                !isDecimalValid(
+                    futurePlans[i]["RecommendedSumAssured"].toString()
+                )
+            ) {
+                return `Overall Summary: ${futurePlans[i].Type} - Both Current Sum Assured and Recommended Sum Assured must be valid decimal numbers.`;
+            }
+
+            if (
+                parseFloat(futurePlans[i]["CurrentSumAssured"]) >
+                parseFloat(futurePlans[i]["RecommendedSumAssured"])
+            ) {
+                return `Overall Summary: ${futurePlans[i].Type} - Current Sum Assured must be less than or equal to Recommended Sum Assured.`;
             }
         }
 
-        // If all fields are filled
+        // If all fields are validated
         return "";
     };
 
@@ -340,7 +338,6 @@ const StudentSummaryFormModal = ({
 
             // Update the student summary if editing
             if (isUpdate && summary.id) {
-                const readyAgent = agent[0];
                 await updateStudentSummary(summary.id, {
                     ...agent[0],
                     student: summary.student.studentId,
@@ -637,7 +634,7 @@ const StudentSummaryFormModal = ({
                             );
                         })}
                         <div className="d-flex justify-content-between mt-3">
-                            {currentPage == 0 ? (
+                            {currentPage === 0 ? (
                                 <Button
                                     variant="secondary"
                                     onClick={switchToProducts}

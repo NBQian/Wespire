@@ -122,12 +122,9 @@ def queryset_to_list_of_dicts(queryset):
 def generate_pdf(student_summary):
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
 
-    productsfilename = "Products.pdf"
     pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
     if not os.path.exists(pdf_dir):
         os.makedirs(pdf_dir)
-    pdf_path = os.path.join(pdf_dir, filename)
-    pdf_path_products = os.path.join(pdf_dir, productsfilename)
 
     products_queryset = Product.objects.filter(unique_code=student_summary.unique_code)
     products = queryset_to_list_of_dicts(products_queryset)

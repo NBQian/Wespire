@@ -69,6 +69,23 @@ class FuturePlanViewSet(viewsets.ModelViewSet):
         if unique_code is not None:
             queryset = queryset.filter(unique_code=unique_code)
         return queryset
+    def perform_create(self, serializer):
+        # Calculate Shortfall
+        current_sum_assured = serializer.validated_data.get('CurrentSumAssured', 0)
+        recommended_sum_assured = serializer.validated_data.get('RecommendedSumAssured', 0)
+        shortfall = recommended_sum_assured - current_sum_assured
+
+        # Include Shortfall in the serializer's save method
+        serializer.save(Shortfall=shortfall)
+
+    def perform_update(self, serializer):
+        # Calculate Shortfall similar to perform_create
+        current_sum_assured = serializer.validated_data.get('CurrentSumAssured', 0)
+        recommended_sum_assured = serializer.validated_data.get('RecommendedSumAssured', 0)
+        shortfall = recommended_sum_assured - current_sum_assured
+
+        # Include Shortfall in the serializer's save method
+        serializer.save(Shortfall=shortfall)
 
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny

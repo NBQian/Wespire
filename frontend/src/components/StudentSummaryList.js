@@ -2,18 +2,10 @@ import React, { useMemo, useState, useEffect } from "react";
 import {
     MaterialReactTable,
     useMaterialReactTable,
-    MRT_GlobalFilterTextField,
     MRT_ToggleFiltersButton,
 } from "material-react-table";
 
-import {
-    Box,
-    Typography,
-    Button,
-    MenuItem,
-    ListItemIcon,
-    lighten,
-} from "@mui/material";
+import { Box, MenuItem, ListItemIcon, lighten } from "@mui/material";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import { FaEdit, FaFilePdf } from "react-icons/fa";
 import {

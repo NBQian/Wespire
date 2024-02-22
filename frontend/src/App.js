@@ -1,4 +1,3 @@
-// App.js
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter } from "react-router-dom";
@@ -7,7 +6,6 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 import { Provider } from "react-redux";
 import store from "./store";
 import "./axiosSetup";
-import history from "./history";
 
 function App() {
     return (

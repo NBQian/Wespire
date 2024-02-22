@@ -2,7 +2,6 @@ import React, { useMemo, useState, useEffect } from "react";
 import {
     MaterialReactTable,
     useMaterialReactTable,
-    MRT_GlobalFilterTextField,
     MRT_ToggleFiltersButton,
 } from "material-react-table";
 import {

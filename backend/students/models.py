@@ -9,7 +9,7 @@ class Student(models.Model):
     FirstName = models.CharField(max_length=100)
     LastName = models.CharField(max_length=100)
     RegistrationNo = models.CharField(max_length=100)
-    Email = models.EmailField(max_length=255, unique=True)
+    Email = models.EmailField(max_length=255)
     Course = models.CharField(max_length=100)
     PhoneNumber = models.CharField(max_length=15, null = True, blank = True)
 

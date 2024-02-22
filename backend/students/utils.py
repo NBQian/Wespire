@@ -1,3 +1,5 @@
+import pypdf
+from pypdf import PdfReader, PdfWriter
 import re
 import datetime
 import time
@@ -22,11 +24,68 @@ from reportlab.lib.styles import getSampleStyleSheet
 from fpdf import FPDF
 import matplotlib.pyplot as plt
 import os
+from io import BytesIO
+
 
 plt.switch_backend('Agg')  # Use the Agg backend for Matplotlib
 
 class PDF(FPDF):
     pass
+def insert_products_between_pages(initial_pdf_path, products_pdf_path, final_pdf_path):
+    # Create a PDF writer for the output PDF
+    pdf_writer = PdfWriter()
+
+    # Open the initial PDF
+    initial_pdf = PdfReader(initial_pdf_path)
+    # Open the PDF with the products tables
+    products_pdf = PdfReader(products_pdf_path)
+
+    # Add the first page from the initial PDF
+    pdf_writer.add_page(initial_pdf.pages[0])
+
+    # Add all pages from the products PDF
+    for page in products_pdf.pages:
+        pdf_writer.add_page(page)
+
+    # Add the remaining pages from the initial PDF
+    for page in initial_pdf.pages[1:]:
+        pdf_writer.add_page(page)
+
+    # Write the merged content to the final PDF file
+    with open(final_pdf_path, 'wb') as out_file:
+        pdf_writer.write(out_file)
+def merge_headers_with_document(main_pdf_path, header1_path, header2_path, output_pdf_path):
+    # Open the main document and the header PDFs
+    with open(main_pdf_path, "rb") as main_pdf_file, \
+         open(header1_path, "rb") as header1_file, \
+         open(header2_path, "rb") as header2_file:
+        
+        main_pdf = pypdf.PdfReader(main_pdf_file)
+        header1_pdf = pypdf.PdfReader(header1_file)
+        header2_pdf = pypdf.PdfReader(header2_file)
+        
+        # Prepare a PDF writer for the output document
+        pdf_writer = pypdf.PdfWriter()
+
+        # Merge header1 with the first page of the main document
+        page1 = main_pdf.pages[0]
+        page1.merge_page(header1_pdf.pages[0])
+        pdf_writer.add_page(page1)
+
+        # Check if there's a second page and merge header2 with it
+        if len(main_pdf.pages) > 1:
+            page2 = main_pdf.pages[1]
+            page2.merge_page(header2_pdf.pages[0])
+            pdf_writer.add_page(page2)
+        
+        # Add any remaining pages from the main document
+        for i in range(2, len(main_pdf.pages)):
+            pdf_writer.add_page(main_pdf.pages[i])
+
+        # Write the modified document to a new file
+        with open(output_pdf_path, "wb") as output_pdf_file:
+            pdf_writer.write(output_pdf_file)
+
 
 def queryset_to_list_of_dicts(queryset):
     list_of_dicts = []
@@ -47,10 +106,12 @@ def queryset_to_list_of_dicts(queryset):
 
 def generate_pdf(student_summary):
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
+    productsfilename = "Products.pdf"
     pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
     if not os.path.exists(pdf_dir):
         os.makedirs(pdf_dir)
     pdf_path = os.path.join(pdf_dir, filename)
+    pdf_path_products = os.path.join(pdf_dir, productsfilename)
 
     products_queryset = Product.objects.filter(unique_code=student_summary.unique_code)
     products = queryset_to_list_of_dicts(products_queryset)
@@ -75,10 +136,9 @@ def generate_pdf(student_summary):
     add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone)
 
     # Products Page
-    # generate_product_tables(products, "products_tables.pdf")
-    # add_tables_to_pdf(products, pdf)
-    # generate_product_tables_matplotlib(products)
-    create_pdf_with_tables(products, "plswork.pdf")
+    create_pdf_with_tables(products, pdf_path_products)
+    merge_headers_with_document(pdf_path_products, "header1.pdf", "header2.pdf", pdf_path_products)
+    
 
     # Bar Graph Page
     add_bar_graph_to_pdf(pdf, products)
@@ -89,183 +149,11 @@ def generate_pdf(student_summary):
 
 
     pdf.output(pdf_path)
+    insert_products_between_pages(pdf_path, pdf_path_products, pdf_path)
+    os.remove(pdf_path_products)
 
     return os.path.join('client_summaries', filename)
-# ######
-# def add_tables_to_pdf(products, pdf):
-#     pdf.set_auto_page_break(auto=True, margin=15)
-#     pdf.set_font("Arial", size=9)  # Adjust the font size as needed
-    
-#     excluded_fields = ['unique_code', 'id', 'Type']
-#     filtered_fields = [field for field in list(products[0].keys()) if field not in excluded_fields]
 
-#     custom_headers = {
-#         "TotalPermanentDisability": "TPD SA",
-#         "TotalDeathCoverage": "Death SA",
-#         "OtherBenefitsRemarks": "Remarks",
-#     }
-
-#     def get_custom_header(field):
-#         """Transform field names into custom headers or default to camel case words."""
-#         return custom_headers.get(field, camel_case_to_words(field))
-
-#     first_half_fields = filtered_fields[:12]
-#     second_half_fields = filtered_fields[12:]
-
-#     first_half_headers = ["No."] + [get_custom_header(field) for field in first_half_fields]
-#     second_half_headers = ["No."] + [get_custom_header(field) for field in second_half_fields]
-
-#     def calculate_column_widths(headers, data):
-#         """Calculate column widths based on the content."""
-#         pdf.set_font("Arial", size=9)  # Ensure the font is set for width calculations
-#         header_widths = [pdf.get_string_width(header) + 2 for header in headers]  # Add a small margin
-#         data_widths = [max(pdf.get_string_width(str(row[i])) for row in data) + 2 for i in range(len(headers))]
-#         column_widths = [max(header, data) for header, data in zip(header_widths, data_widths)]
-#         total_width = sum(column_widths)
-#         if total_width < (pdf.w - 30):  # If total width of columns is less than page width
-#             extra_space = (pdf.w - 30 - total_width) / len(headers)
-#             column_widths = [w + extra_space for w in column_widths]  # Distribute extra space among columns
-#         return column_widths
-
-#     def add_table(headers, data, start_y, header_path):
-#         """Add a table to the PDF, centering it on the page."""
-#         pdf.image(header_path, x=0, y=0, w=297)  # Add the header image
-#         pdf.set_y(start_y)
-#         column_widths = calculate_column_widths(headers, data)
-#         table_width = sum(column_widths)
-#         start_x = (pdf.w - table_width) / 2  # Calculate start_x to center the table
-#         pdf.set_x(start_x)
-
-#         # Header
-#         pdf.set_fill_color(41, 52, 134)  # Header background color
-#         pdf.set_text_color(255, 255, 255)  # Header text color
-#         for i, header in enumerate(headers):
-#             pdf.cell(column_widths[i], 10, header, border=1, fill=True)
-#         pdf.ln(10)
-
-#         # Rows
-#         remarks_index = headers.index("Remarks") if "Remarks" in headers else None
-#         fill = False
-#         for row in data:
-#             pdf.set_x(start_x)  # Align rows with the header
-#             max_height = 10  # Default height, adjust based on text wrapping
-            
-#             # First, determine the maximum height needed for this row
-#             for i, cell in enumerate(row):
-#                 if i == remarks_index:  # Apply wrap_text for "Remarks" column
-#                     wrapped_text = wrap_text(str(cell), column_widths[i], pdf)
-#                     # Estimate height needed for the wrapped text
-#                     num_lines = len(wrapped_text.split('\n'))
-#                     cell_height = num_lines * 10  # Assuming 10 is height per line, adjust as needed
-#                     max_height = max(max_height, cell_height)
-
-#             if fill:
-#                 pdf.set_fill_color(230, 230, 230)  # Light gray for alternating rows
-#             else:
-#                 pdf.set_fill_color(255, 255, 255)  # White for non-alternating rows
-
-#             # Then, render each cell with the determined height
-#             for i, cell in enumerate(row):
-#                 if i == remarks_index and remarks_index is not None:  # Again, special handling for "Remarks"
-#                     wrapped_text = wrap_text(str(cell), column_widths[i], pdf)
-#                     pdf.multi_cell(column_widths[i], 10, wrapped_text, border=1, fill=fill, align='L')
-#                     pdf.set_x(start_x + sum(column_widths[:i+1]))  # Move X to the next cell start position
-#                     pdf.set_y(pdf.get_y() - max_height)  # Reset Y to the top of the current row
-#                 else:
-#                     # For other cells, use the original text but adjust the height as needed
-#                     pdf.cell(column_widths[i], max_height, str(cell), border=1, fill=fill, ln=0)
-            
-#             pdf.ln(max_height)  # Move to the next line after the tallest cell in the row
-#             fill = not fill
-
-#     def wrap_text(text, max_width, pdf):
-#         """
-#         Wrap text to fit within the specified width.
-#         Args:
-#             text (str): The text to wrap.
-#             max_width (float): The maximum width of the text area.
-#             pdf (FPDF): The PDF object for measuring text width.
-#         Returns:
-#             str: The wrapped text with newline characters inserted as necessary.
-#         """
-#         words = text.split()
-#         if not words:
-#             return text
-
-#         wrapped_text = words[0]
-#         current_width = pdf.get_string_width(words[0])
-
-#         for word in words[1:]:
-#             space_width = pdf.get_string_width(' ')
-#             word_width = pdf.get_string_width(word)
-#             if current_width + space_width + word_width <= max_width:
-#                 wrapped_text += ' ' + word
-#                 current_width += space_width + word_width
-#             else:
-#                 wrapped_text += '\n' + word
-#                 current_width = word_width
-
-#         return wrapped_text
-
-
-#     data = [[i+1] + [str(product[field]) for field in filtered_fields] for i, product in enumerate(products)]
-
-#     # Paths for header images
-#     script_dir = os.path.dirname(os.path.abspath(__file__))
-#     header_path1 = os.path.join(script_dir, "img", "LHTable1.png")
-#     header_path2 = os.path.join(script_dir, "img", "LHTable2.png")
-
-#     # Add the tables with headers
-#     pdf.add_page(orientation='L')
-#     add_table(first_half_headers, [[row[0]] + row[1:len(first_half_fields)+1] for row in data], 40, header_path1)
-    
-#     pdf.add_page(orientation='L')
-#     add_table(second_half_headers, [[row[0]] + row[len(first_half_fields)+1:] for row in data], 40, header_path2)
-# ######
-
-# def create_pdf_with_tables(products, pdf_path):
-#     # Assuming 'products' is a list of dictionaries
-#     # Dynamically excluding 'unique_code' and 'id' and then adding a "No." column
-#     excluded_fields = ['unique_code', 'id', 'Type']
-#     filtered_fields = [field for field in list(products[0].keys()) if field not in excluded_fields]
-
-#     first_half_fields = filtered_fields[:len(filtered_fields)//2]
-#     second_half_fields = filtered_fields[len(filtered_fields)//2:]
-
-#     # Adding "No." as the first header for both tables
-#     first_half_headers = ["No."] + [camel_case_to_words(field) for field in first_half_fields]
-#     second_half_headers = ["No."] + [camel_case_to_words(field) for field in second_half_fields]
-
-#     # Adding row numbers to the data for both tables
-#     first_half_data = [[i+1] + [product[field] for field in first_half_fields] for i, product in enumerate(products)]
-#     second_half_data = [[i+1] + [product[field] for field in second_half_fields] for i, product in enumerate(products)]
-
-#     # Setup the document in landscape orientation
-#     doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A4))
-
-#     # Define table styles with header color modifications
-#     table_style = TableStyle([
-#         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-#         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-#         ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
-#         ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-#         ('FONTSIZE', (0, 0), (-1, -1), 8),
-#         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#293486")),
-#         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-#     ])
-
-#     # Create and style the first table
-#     first_table = Table([first_half_headers] + first_half_data)
-#     first_table.setStyle(table_style)
-
-#     # Create and style the second table
-#     second_table = Table([second_half_headers] + second_half_data)
-#     second_table.setStyle(table_style)
-
-#     categories, sums = create_bar_graph_data(products)
-#     # graph = create_bar_graph([camel_case_to_words(cat) for cat in categories], sums)
-#     elements = [first_table, PageBreak(), second_table]
-#     doc.build(elements)
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -306,16 +194,12 @@ def create_pdf_with_tables(products, pdf_path):
     first_half_data = [[i+1] + [product[field] for field in first_half_fields] for i, product in enumerate(products)]
     second_half_data = process_second_table_data(products, second_half_fields)
 
+    
+
+
+    # Create the document with custom canvas method
     doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A4))
-    # table_style = TableStyle([
-    #     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-    #     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    #     ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
-    #     ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-    #     ('FONTSIZE', (0, 0), (-1, -1), 8),
-    #     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#293486")),
-    #     ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-    # ])
+    
     def get_table_style():
         return TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -341,292 +225,18 @@ def create_pdf_with_tables(products, pdf_path):
 
     elements = [first_table, PageBreak(), second_table]
     doc.build(elements)
-# ***
-
-# from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-# from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-# from reportlab.lib.colors import Color, black, white, grey
-# from reportlab.lib.pagesizes import A4, landscape
-# from reportlab.lib.units import mm
-# from reportlab.platypus import PageBreak
-# from reportlab.lib.units import mm
-# import math
-
-# def generate_product_tables(products, filename):
-#     doc = SimpleDocTemplate(filename, pagesize=landscape(A4))
-#     stylesheet = getSampleStyleSheet()
-#     cell_style = ParagraphStyle('cell_style',
-#                                 parent=stylesheet['Normal'],
-#                                 fontSize=10,
-#                                 wordWrap='CJK')
-
-#     # Filter and prepare data for tables
-#     excluded_fields = ['Type', 'id', 'unique_code']
-#     filtered_fields = [field for field in products[0].keys() if field not in excluded_fields]
-#     first_half_fields = filtered_fields[:12]
-#     second_half_fields = filtered_fields[12:]
-    
-#         # Helper function to process product dict into table data, handling paragraph fields
-#     def process_product(product, fields):
-#         return [Paragraph(product[field], cell_style) if field == "OtherBenefitsRemarks" else product[field] for field in fields]
-#     # Now, when preparing table data, use these updated headers for the first row
-#     table1_data = [first_half_fields] + [process_product(product, first_half_fields) for product in products]
-#     table2_data = [second_half_fields] + [process_product(product, second_half_fields) for product in products]
 
 
 
-#     def calculate_column_widths(data, headers, fixed_widths):
-#         # Assuming an average character width for a 10-point font is around 2mm for simplicity
-#         # This is a rough approximation and might need adjustment for more accuracy
-#         char_width = 2 * mm
-#         # Initialize column widths with header lengths
-#         col_widths = [len(header) * char_width for header in headers]
-
-#         # Adjust column widths based on data
-#         for row in data[1:]:  # Skip header row
-#             for i, cell in enumerate(row):
-#                 if isinstance(cell, Paragraph):
-#                     # Estimate text width within the Paragraph, assuming no line breaks for simplicity
-#                     text_width = len(cell.text) * char_width
-#                 else:
-#                     text_width = len(str(cell)) * char_width
-#                 col_widths[i] = max(col_widths[i], text_width)
-
-#         # Apply fixed widths for specific fields
-#         for i, header in enumerate(headers):
-#             if header in fixed_widths:
-#                 col_widths[i] = fixed_widths[header]
-
-#         # Add a small buffer to each column width to ensure content fits well
-#         col_widths = [width + 5 * mm for width in col_widths]
-
-#         return col_widths
-    
-#     # Calculate column widths based on content
-#     col_widths_1 = calculate_column_widths(table1_data, first_half_fields, {"OtherBenefitsRemarks": 30*mm})
-#     col_widths_2 = calculate_column_widths(table2_data, second_half_fields, {"OtherBenefitsRemarks": 30*mm})
-
-#     # Create and style the tables
-#     table1 = Table(table1_data, colWidths=col_widths_1, repeatRows=1)
-#     table2 = Table(table2_data, colWidths=col_widths_2, repeatRows=1)
-
-#     # Define common table style
-#     common_style = [('BACKGROUND', (0,0), (-1,0), grey),
-#                     ('TEXTCOLOR', (0,0), (-1,-1), black),
-#                     ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-#                     ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-#                     ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-#                     ('GRID', (0,0), (-1,-1), 1, black)]
-#     # Apply alternating row colors and common styles
-#     def style_table(table):
-#         style = TableStyle(common_style + [('BACKGROUND', (0,row), (-1,row), white if row % 2 == 0 else Color(230/255, 230/255, 230/255)) for row in range(1, len(table._cellvalues))])
-#         table.setStyle(style)
-
-#     style_table(table1)
-#     style_table(table2)
-
-#     # Build the document with the tables on separate pages
-#     elements = [table1, PageBreak(), table2]
-#     doc.build(elements)
-
-# from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
-# from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-# from reportlab.lib.colors import Color, black, white, grey
-# from reportlab.lib.pagesizes import A4, landscape
-# from reportlab.lib.units import mm
-# import math
-
-# def generate_product_tables(products, filename):
-#     doc = SimpleDocTemplate(filename, pagesize=landscape(A4))
-#     stylesheet = getSampleStyleSheet()
-#     cell_style = ParagraphStyle('cell_style',
-#                                 parent=stylesheet['Normal'],
-#                                 fontSize=10,
-#                                 wordWrap='CJK')
-
-#     # Custom headers mapping
-#     custom_headers = {
-#         "TotalPermanentDisability": "TPD SA",
-#         "TotalDeathCoverage": "Death SA",
-#         "OtherBenefitsRemarks": "Remarks",
-#     }
-
-#     # Filter and prepare data for tables
-#     excluded_fields = ['Type', 'id', 'unique_code']
-#     filtered_fields = [field for field in products[0].keys() if field not in excluded_fields]
-#     # Apply custom headers mapping
-#     display_fields = [custom_headers.get(field, field) for field in filtered_fields]
-#     first_half_fields = display_fields[:12]
-#     second_half_fields = display_fields[12:]
-
-#     # Helper function to process product dict into table data, including applying custom headers for Paragraph fields
-#     def process_product(product, original_fields):
-#         return [Paragraph(product[field] if field in product else '', cell_style) if custom_headers.get(field, field) == "Remarks" else product.get(field, '') for field in original_fields]
-
-#     # Adjust table data preparation to use original field names but apply custom headers for display
-#     original_fields_first_half = filtered_fields[:12]
-#     original_fields_second_half = filtered_fields[12:]
-
-#     table1_data = [first_half_fields] + [process_product(product, original_fields_first_half) for product in products]
-#     table2_data = [second_half_fields] + [process_product(product, original_fields_second_half) for product in products]
-
-#     def calculate_column_widths(data, headers, fixed_widths):
-#         char_width = 2 * mm
-#         col_widths = [len(header) * char_width for header in headers]
-
-#         for row in data[1:]:  # Skip header row
-#             for i, cell in enumerate(row):
-#                 if isinstance(cell, Paragraph):
-#                     text_width = len(cell.text) * char_width
-#                 else:
-#                     text_width = len(str(cell)) * char_width
-#                 col_widths[i] = max(col_widths[i], text_width)
-
-#         for i, header in enumerate(headers):
-#             if header in fixed_widths:
-#                 col_widths[i] = fixed_widths[header]
-
-#         col_widths = [width + 5 * mm for width in col_widths]
-#         return col_widths
-
-#     col_widths_1 = calculate_column_widths(table1_data, first_half_fields, {"Remarks": 30*mm, "ProductName": 30*mm})
-#     col_widths_2 = calculate_column_widths(table2_data, second_half_fields, {"Remarks": 30*mm})
-
-#     table1 = Table(table1_data, colWidths=col_widths_1, repeatRows=1)
-#     table2 = Table(table2_data, colWidths=col_widths_2, repeatRows=1)
-
-#     def style_table(table):
-#         style = TableStyle([('BACKGROUND', (0,0), (-1,0), grey),
-#                             ('TEXTCOLOR', (0,0), (-1,-1), black),
-#                             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-#                             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-#                             ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-#                             ('GRID', (0,0), (-1,-1), 1, black)] +
-#                            [('BACKGROUND', (0,row), (-1,row), white if row % 2 == 0 else Color(230/255, 230/255, 230/255)) for row in range(1, len(table._cellvalues))])
-#         table.setStyle(style)
-
-#     style_table(table1)
-#     style_table(table2)
-
-#     elements = [table1, PageBreak(), table2]
-#     doc.build(elements)
-#*#!$!()&%^#*&@$^@#*&$I^!_@$@~$~(&#(&!))
-# ***
-    
-# # (((((())))))
-#         # Function to generate a table
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from matplotlib.backends.backend_pdf import PdfPages
-# from matplotlib.colors import to_rgba
-
-# def generate_product_tables_matplotlib(products):
-#     custom_headers = {
-#         "TotalPermanentDisability": "TPD SA",
-#         "TotalDeathCoverage": "Death SA",
-#         "OtherBenefitsRemarks": "Remarks",
-#     }
-
-#     # Exclude specified fields
-#     excluded_fields = ['Type', 'id', 'unique_code']
-#     all_fields = [field for field in products[0].keys() if field not in excluded_fields]
-    
-#     # Apply custom headers to fields for display
-#     display_fields = [custom_headers.get(field, field) for field in all_fields]
-    
-#     # Split fields into first 12 and remaining for display
-#     first_half_display_fields = display_fields[:12]
-#     second_half_display_fields = display_fields[12:]
-
-#     # Split original fields into first 12 and remaining for data extraction
-#     first_half_fields = all_fields[:12]
-#     second_half_fields = all_fields[12:]
-
-#     def wrap_text(text, max_width):
-#         """Wrap text to the specified width."""
-#         words = text.split()
-#         wrapped_text = ""
-#         line = ""
-#         for word in words:
-#             if len(line) + len(word) <= max_width:
-#                 line += word + " "
-#             else:
-#                 wrapped_text += line.rstrip() + "\n"
-#                 line = word + " "
-#         wrapped_text += line.rstrip()
-#         return wrapped_text
-
-#     def prepare_table_data(fields, display_fields, wrap_fields=None, max_width=30):
-#         """Prepare table data with text wrapping for specified fields."""
-#         wrap_fields = wrap_fields or []
-#         data = []
-#         for product in products:
-#             row = []
-#             for field in fields:
-#                 text = product.get(field, '')
-#                 if field in wrap_fields:
-#                     text = wrap_text(text, max_width)
-#                 row.append(text)
-#             data.append(row)
-#         return display_fields, data
 
 
 
-#     def adjust_row_heights(table, wrapped_field_indexes, default_height=0.05, height_per_line=0.05):
-#         """Adjust the row heights in a table based on the number of lines in wrapped fields."""
-#         cell_dict = table.get_celld()
-#         for i in range(1, len(cell_dict)//len(wrapped_field_indexes)):  # Skip header row
-#             max_lines = 1  # Default minimum lines
-#             for j in wrapped_field_indexes:
-#                 cell = cell_dict[(i, j)]
-#                 text = cell.get_text().get_text()
-#                 lines = text.count("\n") + 1  # Count lines based on line breaks
-#                 max_lines = max(max_lines, lines)
-            
-#             # Calculate new height based on the number of lines
-#             new_height = default_height + (max_lines - 1) * height_per_line
-#             for j in range(len(wrapped_field_indexes)):
-#                 cell_dict[(i, j)].set_height(new_height)
 
-#     def generate_table(headers, data, filename, wrap_fields):
-#         with PdfPages(filename) as pdf:
-#             fig, ax = plt.subplots(figsize=(11.69, 8.27))  # A4 landscape dimensions in inches
-#             ax.axis('off')
-#             table = ax.table(cellText=data, colLabels=headers, loc='center', cellLoc='center')
-#             table.auto_set_font_size(False)
-#             table.set_fontsize(8)
-#             table.auto_set_column_width(col=list(range(len(headers))))
-            
-#             # Find indexes of fields that have wrapped text
-#             wrapped_field_indexes = [headers.index(field) for field in wrap_fields if field in headers]
 
-#             # Correctly set header style and adjust row heights
-#             for key, cell in table.get_celld().items():
-#                 if key[0] == 0:  # Header row
-#                     cell.set_text_props(color='white')
-#                     cell.set_facecolor('darkblue')
-#                 else:
-#                     bg_color = 'white' if key[0] % 2 == 0 else to_rgba((230/255, 230/255, 230/255))
-#                     cell.set_facecolor(bg_color)
-#                     cell.set_edgecolor('black')
-            
-#             # Adjust row heights based on wrapped text
-#             adjust_row_heights(table, wrapped_field_indexes)
-            
-#             plt.tight_layout()
-#             pdf.savefig(fig)
-#             plt.close()
 
-#     # Generate tables with corrected headers
-#     wrap_fields = ['OtherBenefitsRemarks']  # Specify which fields to wrap
-#     first_headers, first_data = prepare_table_data(first_half_fields, first_half_display_fields, wrap_fields)
-#     generate_table(first_headers, first_data, 'first_table.pdf', wrap_fields)
-    
-    
-#     second_headers, second_data = prepare_table_data(second_half_fields, second_half_display_fields, wrap_fields)
-#     generate_table(second_headers, second_data, 'second_table.pdf', wrap_fields)
 
-# # (((((())))))
+
+
 
 def add_bar_graph_to_pdf(pdf, products):
     # Generate data for the bar graph
@@ -652,10 +262,6 @@ def add_bar_graph_to_pdf(pdf, products):
     # Insert the bar graph image into the PDF
     pdf.image(bar_graph_image_path, x=x_centered, y=y_centered, w=img_width, h=img_height)
 
-
-
-
-
 from reportlab.lib import pagesizes, colors
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.lib.units import mm
@@ -668,7 +274,6 @@ from reportlab.pdfgen.canvas import Canvas
 
 
 # Assuming 'products' is your list of product dictionaries
-
 def create_bar_graph_data(products):
     # Initialize sums for each category
     categories = ['TotalDeathCoverage', 'TotalPermanentDisability', 'EarlyCriticalIllness', 'CriticalIllness', 'Accidental']

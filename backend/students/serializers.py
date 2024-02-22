@@ -26,9 +26,20 @@ class FuturePlanSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class StudentSummarySerializer(serializers.ModelSerializer):
+    pdf_file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = StudentSummary
         fields = '__all__'
+    def get_pdf_file_url(self, obj):
+        # This method will be called for each instance being serialized
+        if obj.pdf_file:
+            # Print the URL for debugging purposes
+            print(obj.pdf_file.url)
+            print(obj.pdf_file)
+            print(obj.pdf_file.name)
+            return obj.pdf_file.url
+        return None
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

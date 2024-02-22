@@ -32,6 +32,7 @@ const StudentSummaryList = () => {
     const [currentSummary, setCurrentSummary] = useState(null);
     useEffect(() => {
         getStudentSummaries().then((data) => {
+            console.log(data);
             setSummaries(data);
             setIsUpdated(false);
         });
@@ -82,8 +83,7 @@ const StudentSummaryList = () => {
             {
                 accessorKey: "date_created",
                 header: "Date Created",
-                Cell: ({ cell }) =>
-                    new Date(cell.getValue()).toLocaleDateString(),
+                Cell: ({ cell }) => new Date(cell.getValue()).toLocaleString(),
             },
         ],
         []

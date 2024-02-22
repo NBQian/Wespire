@@ -6,6 +6,12 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -17,9 +23,10 @@ SECRET_KEY = 'django-insecure-p-ia7h6cdm@1cp#0yaidr#fgha_3$c#7#iaazo9up_t60i$hh$
 DEBUG = True
 
 ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -118,7 +125,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -128,7 +134,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = [
 	os.path.join(BASE_DIR, 'build/static')
 ]
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 REST_FRAMEWORK = {
 	   'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -180,3 +186,16 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'wespireutilities@gmail.com'
 EMAIL_HOST_PASSWORD = "rono gdwc fzlh zeee" 
 EMAIL_USE_TLS = True
+
+
+AWS_ACCESS_KEY_ID = 'AKIAZI2LIVEZ64VSR2V2'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'wespirebackend'
+AWS_S3_SIGNATURE_NAME = 's3v4',
+AWS_S3_REGION_NAME = 'ap-southeast-1'
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL =  None
+AWS_S3_VERIFY = True
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# STATIC_URL = 'https://wespirebackend.s3.amazonaws.com/static/'

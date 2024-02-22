@@ -1,3 +1,4 @@
+import tempfile
 import pypdf
 from pypdf import PdfReader, PdfWriter
 import re
@@ -15,9 +16,6 @@ from fpdf import FPDF
 import time
 import pandas as pd
 import matplotlib.pyplot as plt
-import dataframe_image as dfi
-from matplotlib.backends.backend_pdf import PdfPages
-from reportlab.graphics.charts.piecharts import Pie
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Image
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib.styles import getSampleStyleSheet
@@ -25,20 +23,20 @@ from fpdf import FPDF
 import matplotlib.pyplot as plt
 import os
 from io import BytesIO
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 
 plt.switch_backend('Agg')  # Use the Agg backend for Matplotlib
 
 class PDF(FPDF):
     pass
-def insert_products_between_pages(initial_pdf_path, products_pdf_path, final_pdf_path):
+def insert_products_between_pages(initial_pdf_buffer, products_pdf_buffer):
     # Create a PDF writer for the output PDF
     pdf_writer = PdfWriter()
 
-    # Open the initial PDF
-    initial_pdf = PdfReader(initial_pdf_path)
-    # Open the PDF with the products tables
-    products_pdf = PdfReader(products_pdf_path)
+    initial_pdf = PdfReader(initial_pdf_buffer)
+    products_pdf = PdfReader(products_pdf_buffer)
 
     # Add the first page from the initial PDF
     pdf_writer.add_page(initial_pdf.pages[0])
@@ -51,40 +49,57 @@ def insert_products_between_pages(initial_pdf_path, products_pdf_path, final_pdf
     for page in initial_pdf.pages[1:]:
         pdf_writer.add_page(page)
 
-    # Write the merged content to the final PDF file
-    with open(final_pdf_path, 'wb') as out_file:
-        pdf_writer.write(out_file)
-def merge_headers_with_document(main_pdf_path, header1_path, header2_path, output_pdf_path):
-    # Open the main document and the header PDFs
-    with open(main_pdf_path, "rb") as main_pdf_file, \
-         open(header1_path, "rb") as header1_file, \
-         open(header2_path, "rb") as header2_file:
-        
-        main_pdf = pypdf.PdfReader(main_pdf_file)
-        header1_pdf = pypdf.PdfReader(header1_file)
-        header2_pdf = pypdf.PdfReader(header2_file)
-        
-        # Prepare a PDF writer for the output document
-        pdf_writer = pypdf.PdfWriter()
+    # Output to a new BytesIO buffer
+    output_pdf_buffer = BytesIO()
+    pdf_writer.write(output_pdf_buffer)
+    output_pdf_buffer.seek(0)  # Reset buffer cursor
 
-        # Merge header1 with the first page of the main document
-        page1 = main_pdf.pages[0]
-        page1.merge_page(header1_pdf.pages[0])
-        pdf_writer.add_page(page1)
+    return output_pdf_buffer
 
-        # Check if there's a second page and merge header2 with it
-        if len(main_pdf.pages) > 1:
-            page2 = main_pdf.pages[1]
-            page2.merge_page(header2_pdf.pages[0])
-            pdf_writer.add_page(page2)
+def merge_headers_with_document(main_pdf_buffer, header1_buffer, header2_buffer):
+    main_pdf = PdfReader(main_pdf_buffer)
+    header1_pdf = PdfReader(header1_buffer)
+    header2_pdf = PdfReader(header2_buffer)
+
+    pdf_writer = PdfWriter()
+
+    # Merge header1 with the first page of the main document
+    page1 = main_pdf.pages[0]
+    page1.merge_page(header1_pdf.pages[0])
+    pdf_writer.add_page(page1)
+
+    # Check if there's a second page and merge header2 with it
+    if len(main_pdf.pages) > 1:
+        page2 = main_pdf.pages[1]
+        page2.merge_page(header2_pdf.pages[0])
+        pdf_writer.add_page(page2)
+
+    # Add any remaining pages from the main document
+    for page in main_pdf.pages[2:]:
+        pdf_writer.add_page(page)
+
+    # Output to a new BytesIO buffer
+    output_pdf_buffer = BytesIO()
+    pdf_writer.write(output_pdf_buffer)
+    output_pdf_buffer.seek(0)
+
+    return output_pdf_buffer
+
+
+def load_pdf_into_buffer(pdf_file_path):
+    """
+    Loads a PDF file from the given path into a BytesIO buffer.
+    
+    Args:
+        pdf_file_path (str): The file path to the PDF to load.
         
-        # Add any remaining pages from the main document
-        for i in range(2, len(main_pdf.pages)):
-            pdf_writer.add_page(main_pdf.pages[i])
+    Returns:
+        BytesIO: A buffer containing the PDF content.
+    """
+    with open(pdf_file_path, 'rb') as pdf_file:
+        return BytesIO(pdf_file.read())
 
-        # Write the modified document to a new file
-        with open(output_pdf_path, "wb") as output_pdf_file:
-            pdf_writer.write(output_pdf_file)
+
 
 
 def queryset_to_list_of_dicts(queryset):
@@ -106,6 +121,7 @@ def queryset_to_list_of_dicts(queryset):
 
 def generate_pdf(student_summary):
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
+
     productsfilename = "Products.pdf"
     pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
     if not os.path.exists(pdf_dir):
@@ -123,6 +139,7 @@ def generate_pdf(student_summary):
 
     
     pdf = PDF(orientation='P', unit='mm', format='A4')
+    
     # Cover Page
     pdf.add_page()
     pdf.set_auto_page_break(auto=False)
@@ -136,9 +153,17 @@ def generate_pdf(student_summary):
     add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone)
 
     # Products Page
-    create_pdf_with_tables(products, pdf_path_products)
-    merge_headers_with_document(pdf_path_products, "header1.pdf", "header2.pdf", pdf_path_products)
+    product_table_buffer = create_pdf_with_tables(products)
+
+    # Load your header PDF files into BytesIO buffers
+    header1_path = 'header1.pdf'
+    header2_path = 'header2.pdf'
+
+    header1_buffer = load_pdf_into_buffer(header1_path)
+    header2_buffer = load_pdf_into_buffer(header2_path)
     
+    merged_buffer = merge_headers_with_document(product_table_buffer, header1_buffer, header2_buffer)
+
 
     # Bar Graph Page
     add_bar_graph_to_pdf(pdf, products)
@@ -147,19 +172,27 @@ def generate_pdf(student_summary):
     pdf.add_page()
     generate_pie_charts(student_summary, pdf, pdf_dir, plans)
 
+    pdf_content = pdf.output(dest='S').encode('latin1')  # Get PDF data as a byte string
 
-    pdf.output(pdf_path)
-    insert_products_between_pages(pdf_path, pdf_path_products, pdf_path)
-    os.remove(pdf_path_products)
+    # Create a BytesIO object from the PDF byte string
+    main_buffer = BytesIO(pdf_content)
+    main_buffer.seek(0)
+    
+    final_buffer = insert_products_between_pages(main_buffer, merged_buffer)
 
-    return os.path.join('client_summaries', filename)
+    pdf_file = ContentFile(final_buffer.read(), name=filename)
+
+    # Return the ContentFile, no need to manually save it to S3 or generate a URL here
+    return pdf_file
+
 
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import mm
-def create_pdf_with_tables(products, pdf_path):
+def create_pdf_with_tables(products):
+    buffer = BytesIO()
     custom_headers = {
     "TotalPermanentDisability": "TPD SA",
     "TotalDeathCoverage": "Death SA",
@@ -198,7 +231,7 @@ def create_pdf_with_tables(products, pdf_path):
 
 
     # Create the document with custom canvas method
-    doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
     
     def get_table_style():
         return TableStyle([
@@ -225,6 +258,8 @@ def create_pdf_with_tables(products, pdf_path):
 
     elements = [first_table, PageBreak(), second_table]
     doc.build(elements)
+    buffer.seek(0)
+    return buffer
 
 
 

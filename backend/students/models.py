@@ -1,4 +1,4 @@
-import datetime, os
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.conf import settings
@@ -17,7 +17,7 @@ class Student(models.Model):
 class StudentSummary(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='summaries')
     unique_code = models.CharField(max_length=255, null=True, blank=True)
-    date_created = models.DateTimeField(default=datetime.datetime.now)
+    date_created = models.DateTimeField(default=timezone.now)
     pdf_file = models.FileField(upload_to='client_summaries/', blank=True, null=True)
     DisplayedName = models.CharField(max_length=255)
     DisplayedPhoneNumber = models.CharField(max_length=15)
@@ -26,9 +26,9 @@ class StudentSummary(models.Model):
     MAS = models.CharField(max_length=255)
 
     def delete(self, *args, **kwargs):
+        # If a PDF file is associated with the instance, delete the file
         if self.pdf_file:
-            if os.path.isfile(self.pdf_file.path):
-                os.remove(self.pdf_file.path)
+            self.pdf_file.delete(save=False)
         super(StudentSummary, self).delete(*args, **kwargs)
 
 

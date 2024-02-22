@@ -7,6 +7,8 @@ from .utils import generate_pdf
 from rest_framework.permissions import IsAuthenticated
 from django.http import FileResponse
 from django.conf import settings
+from django.core.files import File
+
 
 
 
@@ -30,24 +32,20 @@ class StudentSummaryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         student_summary = serializer.save(date_created=timezone.now())
-        pdf_file_path = generate_pdf(student_summary)
-        student_summary.pdf_file = pdf_file_path
-        student_summary.save()
+        pdf_file = generate_pdf(student_summary)
+
+        student_summary.pdf_file.save(pdf_file.name, pdf_file, save=True)
 
     def perform_update(self, serializer):
         updated_summary = serializer.save(date_created=timezone.now())
 
         # Check and delete the old PDF file
         if updated_summary.pdf_file:
-            if os.path.isfile(updated_summary.pdf_file.path):
-                os.remove(updated_summary.pdf_file.path)
+            updated_summary.pdf_file.delete(save=False)
 
         # Generate a new PDF
-        pdf_file_path = generate_pdf(updated_summary)
-        updated_summary.pdf_file = pdf_file_path
-
-        # Now save the instance to the database
-        updated_summary.save()
+        pdf_file = generate_pdf(updated_summary)
+        updated_summary.pdf_file.save(pdf_file.name, pdf_file, save = True)
 
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer

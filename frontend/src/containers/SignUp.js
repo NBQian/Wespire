@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { connect } from "react-redux";
 import { signup } from "../actions/auth";
-import logo from "../static/wespire.png";
 
 const Signup = ({ signup, isAuthenticated }) => {
     useEffect(() => {
@@ -46,7 +45,13 @@ const Signup = ({ signup, isAuthenticated }) => {
     return (
         <div className="signup-container">
             <div className="signup-form">
-                <img src={logo} alt="logo" className="login-logo" />
+                <img
+                    src={
+                        "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
+                    }
+                    alt="logo"
+                    className="login-logo"
+                />
                 <p>Create your Account</p>
                 <form onSubmit={onSubmit}>
                     <div className="form-group">

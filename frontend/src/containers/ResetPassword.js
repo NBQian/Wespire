@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 import { reset_password } from "../actions/auth";
 import Spinner from "react-bootstrap/Spinner";
-import logo from "../static/wespire.png";
 import { Link } from "react-router-dom";
 
 const ResetPassword = ({ reset_password }) => {
@@ -32,7 +31,13 @@ const ResetPassword = ({ reset_password }) => {
         return (
             <div className="auth-container">
                 <div className="auth-form">
-                    <img src={logo} alt="logo" className="auth-logo" />
+                    <img
+                        src={
+                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
+                        }
+                        alt="logo"
+                        className="auth-logo"
+                    />
                     <h2>Check Your Email</h2>
                     <p>
                         An email has been sent to {email}. If it has been
@@ -49,7 +54,13 @@ const ResetPassword = ({ reset_password }) => {
     return (
         <div className="auth-container">
             <div className="auth-form">
-                <img src={logo} alt="logo" className="auth-logo" />
+                <img
+                    src={
+                        "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
+                    }
+                    alt="logo"
+                    className="auth-logo"
+                />
                 <p>Enter your email below:</p>
                 <form onSubmit={onSubmit}>
                     <div className="form-group">

@@ -67,12 +67,6 @@ html {
     align-items: center;
 }
 
-/* This will apply to all screens ensuring that the icons have a little margin before the text, 
-which will only show on medium screens and up due to the d-sm-none class on the span */
-.svg-inline--fa {
-    margin-right: 10px; /* Adjust the space as per your design */
-}
-
 .rounded {
     border-collapse: separate;
     border-spacing: 0;

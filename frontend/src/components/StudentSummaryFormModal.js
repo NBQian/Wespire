@@ -17,7 +17,6 @@ import {
 } from "../services/StudentSummaryService";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import GreenTick from "../static/check.png";
 
 const emptySummaryTemplate = {
     DisplayedName: "",
@@ -410,7 +409,9 @@ const StudentSummaryFormModal = ({
                 {stage === "success" && (
                     <div className="text-center">
                         <img
-                            src={GreenTick}
+                            src={
+                                "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/check.2b1900cafb08d36389c5.png"
+                            }
                             alt="Success"
                             style={{ width: "100px", height: "100px" }}
                         />

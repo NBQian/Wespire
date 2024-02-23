@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = "http://18.224.107.62:8000/";
 
 export function getFuturePlans() {
     return axios

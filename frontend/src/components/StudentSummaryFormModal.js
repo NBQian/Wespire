@@ -328,11 +328,21 @@ const StudentSummaryFormModal = ({
             await Promise.all(productPromises);
 
             // Handle future plans: update existing or add new ones
-            const futurePlanPromises = futurePlans.map((plan) =>
-                plan.id
-                    ? updateFuturePlan(plan.id, { ...plan, unique_code: code }) // Assumes plan.id is available for existing future plans
-                    : addFuturePlan({ ...plan, unique_code: code })
-            );
+            const futurePlanPromises = futurePlans.map((plan) => {
+                // Calculate Shortfall upfront for clarity
+                const shortfall =
+                    plan.RecommendedSumAssured - plan.CurrentSumAssured;
+                const planData = {
+                    ...plan,
+                    unique_code: code,
+                    Shortfall: shortfall,
+                };
+
+                // Determine if updating an existing plan or adding a new one
+                return plan.id
+                    ? updateFuturePlan(plan.id, planData)
+                    : addFuturePlan(planData);
+            });
             await Promise.all(futurePlanPromises);
 
             // Update the student summary if editing

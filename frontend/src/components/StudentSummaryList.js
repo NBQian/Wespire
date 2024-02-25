@@ -24,7 +24,6 @@ const StudentSummaryList = () => {
     const [currentSummary, setCurrentSummary] = useState(null);
     useEffect(() => {
         getStudentSummaries().then((data) => {
-            console.log(data);
             setSummaries(data);
             setIsUpdated(false);
         });

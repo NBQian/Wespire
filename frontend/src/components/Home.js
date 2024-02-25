@@ -1,4 +1,7 @@
 import Carousel from "react-bootstrap/Carousel";
+import slide01 from "../static/slide01.jpg";
+import slide02 from "../static/slide02.jpg";
+import slide03 from "../static/slide03.jpg";
 
 const Home = () => {
     return (
@@ -7,27 +10,21 @@ const Home = () => {
                 <Carousel.Item>
                     <img
                         className="d-block w-100"
-                        src={
-                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/slide01.134836f0554d2499338e.jpg"
-                        }
+                        src={slide01}
                         alt="First slide"
                     />
                 </Carousel.Item>
                 <Carousel.Item>
                     <img
                         className="d-block w-100"
-                        src={
-                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/slide02.78166f20310a125a5405.jpg"
-                        }
+                        src={slide02}
                         alt="Second slide"
                     />
                 </Carousel.Item>
                 <Carousel.Item>
                     <img
                         className="d-block w-100"
-                        src={
-                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/slide03.10bade9f35d98f6aa3df.jpg"
-                        }
+                        src={slide03}
                         alt="Third slide"
                     />
                 </Carousel.Item>

@@ -1,15 +1,17 @@
 import React from "react";
 import { Navbar, Nav, Container } from "react-bootstrap";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../actions/auth";
 import "../App.css";
+import logo from "../static/wespire.png";
 
 // The Lord is my Light. I shall not want.
 
 const Navigation = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const user = useSelector((state) => state.auth.user);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -21,9 +23,7 @@ const Navigation = () => {
             <Container fluid>
                 <Navbar.Brand as={NavLink} to="/" end>
                     <img
-                        src={
-                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
-                        }
+                        src={logo}
                         width="140"
                         height="35"
                         className="d-inline-block align-top"
@@ -36,7 +36,7 @@ const Navigation = () => {
                         as={NavLink}
                         to="/"
                         end
-                        className="d-flex align-items-center me-4"
+                        className="d-flex align-items-center me-3"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -55,7 +55,7 @@ const Navigation = () => {
                         as={NavLink}
                         exact
                         to="/clients"
-                        className="d-flex align-items-center me-4"
+                        className="d-flex align-items-center me-3"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -74,7 +74,7 @@ const Navigation = () => {
                         as={NavLink}
                         exact
                         to="/client-summaries"
-                        className="d-flex align-items-center"
+                        className="d-flex align-items-center me-3"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -91,6 +91,11 @@ const Navigation = () => {
                     </Nav.Link>
                 </Nav>
                 <Nav>
+                    <Nav.Item className="d-flex align-items-center me-4">
+                        <span className="text-light d-none d-lg-inline">
+                            You are logged in as {user?.name}
+                        </span>
+                    </Nav.Item>
                     <Nav.Link
                         onClick={handleLogout}
                         style={{ display: "flex", alignItems: "center" }}
@@ -113,16 +118,7 @@ const Navigation = () => {
                                 d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"
                             />
                         </svg>
-                        <span
-                            style={{
-                                display: "inline-block",
-                                marginTop: "2px",
-                            }}
-                        >
-                            <span className="d-none d-sm-inline me-4">
-                                Logout
-                            </span>
-                        </span>
+                        <span className="d-none d-md-inline">Logout</span>
                     </Nav.Link>
                 </Nav>
             </Container>

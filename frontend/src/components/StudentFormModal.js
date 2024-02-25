@@ -46,7 +46,10 @@ const StudentFormModal = (props) => {
             onHide={onHide}
         >
             <Modal.Header closeButton>
-                <Modal.Title id="contained-modal-title-vcenter">
+                <Modal.Title
+                    id="contained-modal-title-vcenter"
+                    className="centered-modal-title"
+                >
                     {isUpdate
                         ? "Update Student Information"
                         : "Add Student Information"}

@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { connect } from "react-redux";
 import { login } from "../actions/auth";
 import "./Style.css";
+import logo from "../static/wespire.png";
 
 const Login = ({ login, isAuthenticated }) => {
     useEffect(() => {
@@ -37,13 +38,7 @@ const Login = ({ login, isAuthenticated }) => {
         <div className="login-container">
             <div className="login-form">
                 <form onSubmit={onSubmit}>
-                    <img
-                        src={
-                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
-                        }
-                        alt="logo"
-                        className="login-logo"
-                    />
+                    <img src={logo} alt="logo" className="login-logo" />
                     <h6>Aspire to Inspire</h6>
                     <div className="form-group">
                         <label htmlFor="email">Email address</label>

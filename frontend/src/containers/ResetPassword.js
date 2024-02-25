@@ -3,6 +3,7 @@ import { connect } from "react-redux";
 import { reset_password } from "../actions/auth";
 import Spinner from "react-bootstrap/Spinner";
 import { Link } from "react-router-dom";
+import logo from "../static/wespire.png";
 
 const ResetPassword = ({ reset_password }) => {
     useEffect(() => {
@@ -54,13 +55,7 @@ const ResetPassword = ({ reset_password }) => {
     return (
         <div className="auth-container">
             <div className="auth-form">
-                <img
-                    src={
-                        "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
-                    }
-                    alt="logo"
-                    className="auth-logo"
-                />
+                <img src={logo} alt="logo" className="auth-logo" />
                 <p>Enter your email below:</p>
                 <form onSubmit={onSubmit}>
                     <div className="form-group">

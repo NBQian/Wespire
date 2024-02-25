@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { connect } from "react-redux";
 import { verify } from "../actions/auth";
+import logo from "../static/wespire.png";
 
 const Activate = ({ verify }) => {
     useEffect(() => {
@@ -27,13 +28,7 @@ const Activate = ({ verify }) => {
     return (
         <div className="auth-container">
             <div className="auth-form">
-                <img
-                    src={
-                        "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
-                    }
-                    alt="logo"
-                    className="auth-logo"
-                />
+                <img src={logo} alt="logo" className="auth-logo" />
                 <p>click the button below to verify your account:</p>
                 <button onClick={verify_account} className="btn-verify">
                     Verify Account

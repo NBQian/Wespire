@@ -17,6 +17,7 @@ import {
 } from "../services/StudentSummaryService";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import GreenTick from "../static/check.png";
 
 const emptySummaryTemplate = {
     DisplayedName: "",
@@ -178,8 +179,7 @@ const StudentSummaryFormModal = ({
     };
 
     const validateFields = () => {
-        // Validate Product Fields
-        const decimalFields1 = [
+        const productDecimalFields = [
             "WholeLife",
             "Endowment",
             "Term",
@@ -198,10 +198,10 @@ const StudentSummaryFormModal = ({
 
         products.forEach((product, i) => {
             Object.keys(product).forEach((key) => {
-                if (decimalFields1.includes(key) && product[key] === "") {
-                    product[key] = "0"; // Set empty decimal fields to "0"
+                if (productDecimalFields.includes(key) && product[key] === "") {
+                    product[key] = "0";
                 } else if (
-                    decimalFields1.includes(key) &&
+                    productDecimalFields.includes(key) &&
                     !isDecimalValid(product[key].toString())
                 ) {
                     return `Product ${i + 1}: ${key
@@ -220,10 +220,13 @@ const StudentSummaryFormModal = ({
         });
 
         // Validate Future Plan Fields
-        const decimalFields2 = ["CurrentSumAssured", "RecommendedSumAssured"];
+        const futurePlanDecimalFields = [
+            "CurrentSumAssured",
+            "RecommendedSumAssured",
+        ];
 
         for (let i = 0; i < futurePlans.length; i++) {
-            decimalFields2.forEach((field) => {
+            futurePlanDecimalFields.forEach((field) => {
                 if (futurePlans[i][field] === "") {
                     futurePlans[i][field] = "0"; // Set empty decimal fields to "0"
                 }
@@ -379,27 +382,32 @@ const StudentSummaryFormModal = ({
             aria-labelledby="contained-modal-title-vcenter"
             centered
             onHide={onHide}
-            backdrop={stage === "loading" ? "static" : true} // Prevent closing by clicking outside when loading
+            backdrop={stage === "loading" ? "static" : true}
             keyboard={stage !== "loading"}
         >
             {stage !== "loading" && stage !== "success" ? (
-                // Render Modal.Header with closeButton when stage is not "loading" or "success"
                 <Modal.Header closeButton>
-                    <Modal.Title id="contained-modal-title-vcenter">
-                        {/* Title based on stage */}
-                    </Modal.Title>
-                </Modal.Header>
-            ) : (
-                // Render Modal.Header without closeButton when stage is "loading" or "success"
-                <Modal.Header>
                     <Modal.Title
                         id="contained-modal-title-vcenter"
                         className="centered-modal-title"
                     >
                         {stage === "agent" && "Agent Information"}
                         {stage === "products" &&
-                            `Product Details - ${currentPage + 1}`}
-                        {stage === "futurePlans" && "Overall Coverage Summary"}
+                            `Product ${currentPage + 1} Details`}
+                        {stage === "futurePlans" && (
+                            <div>
+                                Overall Coverage Summary: <br />
+                                {futurePlans[currentPage]["Type"]}
+                            </div>
+                        )}
+                    </Modal.Title>
+                </Modal.Header>
+            ) : (
+                <Modal.Header>
+                    <Modal.Title
+                        id="contained-modal-title-vcenter"
+                        className="centered-modal-title"
+                    >
                         {stage === "loading" && (
                             <div>Generating Report{ellipsis}</div>
                         )}
@@ -419,9 +427,7 @@ const StudentSummaryFormModal = ({
                 {stage === "success" && (
                     <div className="text-center">
                         <img
-                            src={
-                                "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/check.2b1900cafb08d36389c5.png"
-                            }
+                            src={GreenTick}
                             alt="Success"
                             style={{ width: "100px", height: "100px" }}
                         />
@@ -435,7 +441,7 @@ const StudentSummaryFormModal = ({
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase());
                             return (
-                                <Form.Group key={field}>
+                                <Form.Group key={field} className="mb-3">
                                     <Form.Label>{label}</Form.Label>
                                     <Form.Control
                                         type="text"
@@ -473,8 +479,10 @@ const StudentSummaryFormModal = ({
                                 .replace(/^./, (str) => str.toUpperCase());
                             if (field === "OtherBenefitsRemarks") {
                                 return (
-                                    <Form.Group key={field}>
-                                        <Form.Label>{label}</Form.Label>
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>
+                                            Other Benefits / Remarks
+                                        </Form.Label>
                                         <Form.Control
                                             as="textarea"
                                             rows={3} // Starting rows
@@ -494,7 +502,7 @@ const StudentSummaryFormModal = ({
                             // Special handling for the Date field
                             if (field === "Date") {
                                 return (
-                                    <Form.Group key={field}>
+                                    <Form.Group key={field} className="mb-3">
                                         <Form.Label>{label}</Form.Label>
                                         <ReactDatePicker
                                             selected={
@@ -522,6 +530,9 @@ const StudentSummaryFormModal = ({
                                             dateFormat="yyyy-MM-dd"
                                             className="form-control custom-datepicker"
                                             placeholderText="Select date"
+                                            showYearDropdown
+                                            yearDropdownItemNumber={40}
+                                            scrollableYearDropdown
                                         />
                                     </Form.Group>
                                 );
@@ -529,7 +540,7 @@ const StudentSummaryFormModal = ({
 
                             // Default handling for other fields
                             return (
-                                <Form.Group key={field}>
+                                <Form.Group key={field} className="mb-3">
                                     <Form.Label>{label}</Form.Label>
                                     <Form.Control
                                         type="text"
@@ -602,7 +613,7 @@ const StudentSummaryFormModal = ({
                 {stage === "futurePlans" && (
                     <Form onSubmit={submitAll}>
                         {Object.keys(emptyFuturePlanTemplate).map((field) => {
-                            if (field === "Type") return null; // Skip rendering the "Type" field
+                            if (field === "Type") return null;
 
                             const label = field
                                 .replace(/([A-Z])/g, " $1")
@@ -610,7 +621,7 @@ const StudentSummaryFormModal = ({
 
                             if (field === "Remarks") {
                                 return (
-                                    <Form.Group key={field}>
+                                    <Form.Group key={field} className="mb-3">
                                         <Form.Label>{label}</Form.Label>
                                         <Form.Control
                                             as="textarea"
@@ -630,7 +641,7 @@ const StudentSummaryFormModal = ({
                                 );
                             }
                             return (
-                                <Form.Group key={field}>
+                                <Form.Group key={field} className="mb-3">
                                     <Form.Label>{label}</Form.Label>
                                     <Form.Control
                                         type="text"

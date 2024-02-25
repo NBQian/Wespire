@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://18.224.107.62:8000/";
+const BASE_URL = process.env.REACT_APP_API_URL;
 
 export function getStudentSummaries() {
     return axios

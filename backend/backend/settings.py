@@ -5,7 +5,6 @@ from pathlib import Path
 from datetime import timedelta
 from django.core.management.utils import get_random_secret_key
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -71,7 +70,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'build')],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -178,6 +177,10 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
+
+DOMAIN = 'www.wespirereportgenerator.com'
+SITE_NAME = 'Wespire Utilities'
+
 DJOSER = {
 	'LOGIN_FIELD': 'email',
 	'USER_CREATE_PASSWORD_RETYPE': True,
@@ -194,7 +197,7 @@ DJOSER = {
 		'user_create': 'students.serializers.UserCreateSerializer',
 		'user': 'students.serializers.UserCreateSerializer',
 		'user_delete': 'students.serializers.UserDeleteSerializer',
-    }
+    },
 }
 
 AUTH_USER_MODEL = 'students.UserAccount'

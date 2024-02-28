@@ -122,64 +122,62 @@ def queryset_to_list_of_dicts(queryset):
 def generate_pdf(student_summary):
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
 
-    # pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
-    # if not os.path.exists(pdf_dir):
-    #     os.makedirs(pdf_dir)
+    pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
+    if not os.path.exists(pdf_dir):
+        os.makedirs(pdf_dir)
 
-    # products_queryset = Product.objects.filter(unique_code=student_summary.unique_code)
-    # products = queryset_to_list_of_dicts(products_queryset)
+    products_queryset = Product.objects.filter(unique_code=student_summary.unique_code)
+    products = queryset_to_list_of_dicts(products_queryset)
 
-    # plans = FuturePlan.objects.filter(unique_code=student_summary.unique_code)
+    plans = FuturePlan.objects.filter(unique_code=student_summary.unique_code)
 
-    # current_dir = os.path.dirname(__file__)
-    # cover_img_path = os.path.join(current_dir, 'img', 'Cover.png')
+    current_dir = os.path.dirname(__file__)
+    cover_img_path = os.path.join(current_dir, 'img', 'Cover.png')
 
     
-    # pdf = PDF(orientation='P', unit='mm', format='A4')
+    pdf = PDF(orientation='P', unit='mm', format='A4')
     
-    # # Cover Page
-    # pdf.add_page()
-    # pdf.set_auto_page_break(auto=False)
-    # pdf.image(cover_img_path, 0, 0, 210, 297)
-    # client_name = f"{student_summary.student.FirstName} {student_summary.student.LastName}"
-    # user_name = student_summary.DisplayedName
-    # email = student_summary.DisplayedEmail
-    # MAS = student_summary.MAS
-    # title = student_summary.DisplayedTitle
-    # phone = student_summary.DisplayedPhoneNumber
-    # add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone)
+    # Cover Page
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=False)
+    pdf.image(cover_img_path, 0, 0, 210, 297)
+    client_name = f"{student_summary.student.FirstName} {student_summary.student.LastName}"
+    user_name = student_summary.DisplayedName
+    email = student_summary.DisplayedEmail
+    MAS = student_summary.MAS
+    title = student_summary.DisplayedTitle
+    phone = student_summary.DisplayedPhoneNumber
+    add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone)
 
-    # # Products Page
-    # product_table_buffer = create_pdf_with_tables(products)
+    # Products Page
+    product_table_buffer = create_pdf_with_tables(products)
 
-    # # Load your header PDF files into BytesIO buffers
-    # header1_path = 'header1.pdf'
-    # header2_path = 'header2.pdf'
+    # Load your header PDF files into BytesIO buffers
+    header1_path = 'header1.pdf'
+    header2_path = 'header2.pdf'
 
-    # header1_buffer = load_pdf_into_buffer(header1_path)
-    # header2_buffer = load_pdf_into_buffer(header2_path)
+    header1_buffer = load_pdf_into_buffer(header1_path)
+    header2_buffer = load_pdf_into_buffer(header2_path)
     
-    # merged_buffer = merge_headers_with_document(product_table_buffer, header1_buffer, header2_buffer)
+    merged_buffer = merge_headers_with_document(product_table_buffer, header1_buffer, header2_buffer)
 
 
-    # # Bar Graph Page
-    # add_bar_graph_to_pdf(pdf, products)
+    # Bar Graph Page
+    add_bar_graph_to_pdf(pdf, products)
 
-    # # Pie Chart Page
-    # pdf.add_page()
-    # generate_pie_charts(student_summary, pdf, pdf_dir, plans)
+    # Pie Chart Page
+    pdf.add_page()
+    generate_pie_charts(student_summary, pdf, pdf_dir, plans)
 
-    # pdf_content = pdf.output(dest='S').encode('latin1')  # Get PDF data as a byte string
+    pdf_content = pdf.output(dest='S').encode('latin1')  # Get PDF data as a byte string
 
-    # # Create a BytesIO object from the PDF byte string
-    # main_buffer = BytesIO(pdf_content)
-    # main_buffer.seek(0)
+    # Create a BytesIO object from the PDF byte string
+    main_buffer = BytesIO(pdf_content)
+    main_buffer.seek(0)
     
-    # final_buffer = insert_products_between_pages(main_buffer, merged_buffer)
+    final_buffer = insert_products_between_pages(main_buffer, merged_buffer)
 
-    # pdf_file = ContentFile(final_buffer.read(), name=filename)
-    
-    pdf_file = ContentFile("header1.pdf", name=filename)
+    pdf_file = ContentFile(final_buffer.read(), name=filename)
 
     # Return the ContentFile, no need to manually save it to S3 or generate a URL here
     return pdf_file

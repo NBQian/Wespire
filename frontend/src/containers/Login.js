@@ -5,7 +5,8 @@ import { login } from "../actions/auth";
 import "./Style.css";
 import logo from "../static/wespire.png";
 
-const Login = ({ login, isAuthenticated }) => {
+const Login = ({ login, isAuthenticated, error, signUpSuccessEmail }) => {
+    // Include error in the props
     useEffect(() => {
         document.body.style.background =
             "linear-gradient(to right, rgb(24, 32, 176), rgb(224, 196, 38))";
@@ -40,6 +41,24 @@ const Login = ({ login, isAuthenticated }) => {
                 <form onSubmit={onSubmit}>
                     <img src={logo} alt="logo" className="login-logo" />
                     <h6>Aspire to Inspire</h6>
+                    {error && (
+                        <div
+                            className="alert alert-danger text-center"
+                            role="alert"
+                        >
+                            {error}
+                        </div>
+                    )}
+                    {signUpSuccessEmail && (
+                        <div
+                            className="alert alert-success text-center"
+                            role="alert"
+                        >
+                            An email has been sent to {signUpSuccessEmail},
+                            please follow the steps to verify your account.
+                        </div>
+                    )}
+
                     <div className="form-group">
                         <label htmlFor="email">Email address</label>
                         <input
@@ -81,6 +100,8 @@ const Login = ({ login, isAuthenticated }) => {
 
 const mapStateToProps = (state) => ({
     isAuthenticated: state.auth.isAuthenticated,
+    error: state.auth.error, // Make sure you're mapping the error state to props
+    signUpSuccessEmail: state.auth.signUpSuccessEmail,
 });
 
 export default connect(mapStateToProps, { login })(Login);

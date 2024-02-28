@@ -44,11 +44,6 @@ function authReducer(state = initialState, action) {
                 refresh: payload.refresh,
                 error: null,
             };
-        case SIGNUP_SUCCESS:
-            return {
-                ...state,
-                isAuthenticated: false,
-            };
         case USER_LOADED_SUCCESS:
             return {
                 ...state,
@@ -65,6 +60,23 @@ function authReducer(state = initialState, action) {
                 user: null,
             };
         case LOGIN_FAIL:
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+            return {
+                ...state,
+                access: null,
+                refresh: null,
+                isAuthenticated: false,
+                user: null,
+                error: payload.error,
+            };
+        case SIGNUP_SUCCESS:
+            return {
+                ...state,
+                isAuthenticated: false,
+                signUpSuccessEmail: payload.email, // Store the user's email upon successful signup
+                error: null, // Reset any previous errors
+            };
         case SIGNUP_FAIL:
         case LOGOUT:
             localStorage.removeItem("access");
@@ -75,7 +87,7 @@ function authReducer(state = initialState, action) {
                 refresh: null,
                 isAuthenticated: false,
                 user: null,
-                error: payload ? payload.error : "Authentication failed",
+                error: null,
             };
         case PASSWORD_RESET_SUCCESS:
         case PASSWORD_RESET_FAIL:

@@ -11,5 +11,4 @@ urlpatterns = [
 	path('auth/', include('djoser.urls.jwt')),
     path("admin/", admin.site.urls),
     path('', include('students.urls')),
-	re_path(r'^.*$', TemplateView.as_view(template_name='index.html'), name='app'),
 ]

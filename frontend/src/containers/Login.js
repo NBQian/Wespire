@@ -1,20 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { connect } from "react-redux";
-import { login } from "../actions/auth";
+import { login, resendActivationEmail, clearErrors } from "../actions/auth";
 import "./Style.css";
 import logo from "../static/wespire.png";
 
-const Login = ({ login, isAuthenticated, error, signUpSuccessEmail }) => {
-    // Include error in the props
+const Login = ({
+    login,
+    isAuthenticated,
+    error,
+    signUpSuccessEmail,
+    resendActivationEmail,
+    clearErrors,
+}) => {
+    const location = useLocation();
+    const accountVerifiedMessage = location.state?.accountVerified
+        ? "Your account has been verified. You can now sign in with your credentials."
+        : "";
     useEffect(() => {
         document.body.style.background =
             "linear-gradient(to right, rgb(24, 32, 176), rgb(224, 196, 38))";
 
         return () => {
             document.body.style.background = "none";
+            clearErrors();
         };
-    }, []);
+    }, [clearErrors]);
+
+    const handleResendActivationEmail = () => {
+        if (signUpSuccessEmail) {
+            resendActivationEmail(signUpSuccessEmail);
+        }
+    };
 
     const [formData, setFormData] = useState({
         email: "",
@@ -41,23 +58,59 @@ const Login = ({ login, isAuthenticated, error, signUpSuccessEmail }) => {
                 <form onSubmit={onSubmit}>
                     <img src={logo} alt="logo" className="login-logo" />
                     <h6>Aspire to Inspire</h6>
-                    {error && (
-                        <div
-                            className="alert alert-danger text-center"
-                            role="alert"
-                        >
-                            {error}
-                        </div>
-                    )}
-                    {signUpSuccessEmail && (
-                        <div
-                            className="alert alert-success text-center"
-                            role="alert"
-                        >
-                            An email has been sent to {signUpSuccessEmail},
-                            please follow the steps to verify your account.
-                        </div>
-                    )}
+                    <>
+                        {error ? (
+                            <div
+                                className="alert alert-danger text-center"
+                                role="alert"
+                            >
+                                {error}
+                            </div>
+                        ) : accountVerifiedMessage ? (
+                            <div
+                                className="alert alert-success text-center"
+                                role="alert"
+                            >
+                                {accountVerifiedMessage}
+                            </div>
+                        ) : signUpSuccessEmail ? (
+                            <div
+                                className="alert alert-success"
+                                role="alert"
+                                style={{
+                                    position: "relative",
+                                    padding: "1rem 1rem",
+                                    marginBottom: "1rem",
+                                    border: "1px solid transparent",
+                                    borderRadius: ".25rem",
+                                }}
+                            >
+                                <p style={{ margin: 0 }}>
+                                    An email has been sent to{" "}
+                                    <strong>{signUpSuccessEmail}</strong>,
+                                    please follow the steps to verify your
+                                    account.
+                                </p>
+                                <p style={{ marginTop: "1rem" }}>
+                                    If you do not receive the email within{" "}
+                                    <strong>5 minutes</strong>, click
+                                    <a
+                                        href="#!"
+                                        onClick={handleResendActivationEmail}
+                                        style={{
+                                            marginLeft: "5px",
+                                            fontWeight: "bold",
+                                            textDecoration: "underline",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        here
+                                    </a>{" "}
+                                    to resend the email.
+                                </p>
+                            </div>
+                        ) : null}
+                    </>
 
                     <div className="form-group">
                         <label htmlFor="email">Email address</label>
@@ -100,8 +153,12 @@ const Login = ({ login, isAuthenticated, error, signUpSuccessEmail }) => {
 
 const mapStateToProps = (state) => ({
     isAuthenticated: state.auth.isAuthenticated,
-    error: state.auth.error, // Make sure you're mapping the error state to props
+    error: state.auth.error,
     signUpSuccessEmail: state.auth.signUpSuccessEmail,
 });
 
-export default connect(mapStateToProps, { login })(Login);
+export default connect(mapStateToProps, {
+    login,
+    resendActivationEmail,
+    clearErrors,
+})(Login);

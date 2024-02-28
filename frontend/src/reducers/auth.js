@@ -15,6 +15,9 @@ import {
     ACTIVATION_FAIL,
     LOGOUT,
     TOKEN_EXPIRED,
+    RESEND_ACTIVATION_EMAIL_SUCCESS,
+    RESEND_ACTIVATION_EMAIL_FAIL,
+    CLEAR_ERRORS,
 } from "../actions/types";
 
 const initialState = {
@@ -108,6 +111,24 @@ function authReducer(state = initialState, action) {
                 isAuthenticated: false,
                 user: null,
                 error: "Session expired. Please login again.",
+            };
+
+        case RESEND_ACTIVATION_EMAIL_SUCCESS:
+            return {
+                ...state,
+                resendActivationEmailSuccess: true,
+                resendActivationEmailError: null,
+            };
+        case RESEND_ACTIVATION_EMAIL_FAIL:
+            return {
+                ...state,
+                resendActivationEmailSuccess: false,
+                resendActivationEmailError: payload.error,
+            };
+        case CLEAR_ERRORS:
+            return {
+                ...state,
+                error: null,
             };
         default:
             return state;

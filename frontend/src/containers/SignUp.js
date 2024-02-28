@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import { connect } from "react-redux";
 import { signup } from "../actions/auth";
 import logo from "../static/wespire.png";
+import Spinner from "react-bootstrap/Spinner"; // Import Spinner
 
 const Signup = ({ signup, isAuthenticated }) => {
     useEffect(() => {
@@ -23,15 +24,18 @@ const Signup = ({ signup, isAuthenticated }) => {
     });
 
     const { name, email, password, re_password } = formData;
+    const [loading, setLoading] = useState(false);
 
     const onChange = (e) =>
         setFormData({ ...formData, [e.target.name]: e.target.value });
 
-    const onSubmit = (e) => {
+    const onSubmit = async (e) => {
         e.preventDefault();
 
         if (password === re_password) {
-            signup(name, email, password, re_password);
+            setLoading(true); // Start loading
+            await signup(name, email, password, re_password);
+            setLoading(false); // Stop loading after signup is complete
             setAccountCreated(true);
         }
     };
@@ -91,7 +95,22 @@ const Signup = ({ signup, isAuthenticated }) => {
                             required
                         />
                     </div>
-                    <button type="submit">Register</button>
+                    <button type="submit" disabled={loading}>
+                        {loading ? (
+                            <>
+                                <Spinner
+                                    as="span"
+                                    animation="border"
+                                    size="sm"
+                                    role="status"
+                                    aria-hidden="true"
+                                />
+                                <span className="ml-2">Loading...</span>
+                            </>
+                        ) : (
+                            "Register"
+                        )}
+                    </button>
                 </form>
                 <p className="mt-3">
                     Already have an account? <Link to="/login">Sign In</Link>

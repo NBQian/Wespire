@@ -30,21 +30,21 @@ const ResetPassword = ({ reset_password }) => {
 
     if (requestSent) {
         return (
-            <div className="auth-container">
+            <div className="auth-container text-center">
                 <div className="auth-form">
-                    <img
-                        src={
-                            "https://wespirebackend.s3.ap-southeast-1.amazonaws.com/media/wespire.93ec30618e4160b29728.png"
-                        }
-                        alt="logo"
-                        className="auth-logo"
-                    />
-                    <h2>Check Your Email</h2>
-                    <p>
-                        An email has been sent to {email}. If it has been
-                        registered with us, you will receive the email shortly.
-                    </p>
-                    <Link to="/login" className="auth-back-link">
+                    <img src={logo} alt="logo" className="auth-logo mb-4" />
+                    <div className="alert alert-success" role="alert">
+                        {" "}
+                        {/* Use alert-success for consistent styling */}
+                        <h2 className="mb-3">Check Your Email</h2>
+                        <p className="mb-4">
+                            An email has been sent to <strong>{email}</strong>.
+                            <br />
+                            If it has been registered with us, you will receive
+                            the email shortly.
+                        </p>
+                    </div>
+                    <Link to="/login" className="btn btn-primary">
                         Back to Sign In
                     </Link>
                 </div>

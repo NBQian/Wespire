@@ -15,6 +15,9 @@ import {
     ACTIVATION_SUCCESS,
     ACTIVATION_FAIL,
     LOGOUT,
+    RESEND_ACTIVATION_EMAIL_SUCCESS,
+    RESEND_ACTIVATION_EMAIL_FAIL,
+    CLEAR_ERRORS,
 } from "./types";
 
 export const load_user = () => async (dispatch) => {
@@ -268,4 +271,33 @@ export const logout = () => (dispatch) => {
     dispatch({
         type: LOGOUT,
     });
+};
+
+export const resendActivationEmail = (email) => async (dispatch) => {
+    try {
+        const config = {
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+        const body = JSON.stringify({ email });
+        await axios.post(
+            `${process.env.REACT_APP_API_URL}/auth/users/resend_activation/`,
+            body,
+            config
+        );
+        dispatch({
+            type: RESEND_ACTIVATION_EMAIL_SUCCESS,
+        });
+    } catch (err) {
+        dispatch({
+            type: RESEND_ACTIVATION_EMAIL_FAIL,
+        });
+    }
+};
+
+export const clearErrors = () => {
+    return {
+        type: CLEAR_ERRORS,
+    };
 };

@@ -13,10 +13,23 @@ const Login = ({
     resendActivationEmail,
     clearErrors,
 }) => {
+    const [alertVisible, setAlertVisible] = useState(true);
+
+    const handleCloseAlert = () => {
+        clearErrors();
+        setAlertVisible(false);
+    };
+
     const location = useLocation();
     const accountVerifiedMessage = location.state?.accountVerified
         ? "Your account has been verified. You can now sign in with your credentials."
         : "";
+
+    useEffect(() => {
+        if (error || signUpSuccessEmail) {
+            setAlertVisible(true);
+        }
+    }, [error, signUpSuccessEmail]);
     useEffect(() => {
         document.body.style.background =
             "linear-gradient(to right, rgb(24, 32, 176), rgb(224, 196, 38))";
@@ -59,57 +72,120 @@ const Login = ({
                     <img src={logo} alt="logo" className="login-logo" />
                     <h6>Aspire to Inspire</h6>
                     <>
-                        {error ? (
-                            <div
-                                className="alert alert-danger text-center"
-                                role="alert"
-                            >
-                                {error}
-                            </div>
-                        ) : accountVerifiedMessage ? (
-                            <div
-                                className="alert alert-success text-center"
-                                role="alert"
-                            >
-                                {accountVerifiedMessage}
-                            </div>
-                        ) : signUpSuccessEmail ? (
-                            <div
-                                className="alert alert-success"
-                                role="alert"
-                                style={{
-                                    position: "relative",
-                                    padding: "1rem 1rem",
-                                    marginBottom: "1rem",
-                                    border: "1px solid transparent",
-                                    borderRadius: ".25rem",
-                                }}
-                            >
-                                <p style={{ margin: 0 }}>
-                                    An email has been sent to{" "}
-                                    <strong>{signUpSuccessEmail}</strong>,
-                                    please follow the steps to verify your
-                                    account.
-                                </p>
-                                <p style={{ marginTop: "1rem" }}>
-                                    If you do not receive the email within{" "}
-                                    <strong>5 minutes</strong>, click
-                                    <a
-                                        href="#!"
-                                        onClick={handleResendActivationEmail}
+                        {alertVisible && (
+                            <>
+                                {error ? (
+                                    <div
+                                        className="alert alert-danger text-center"
+                                        role="alert"
+                                    >
+                                        {error}
+                                        <div
+                                            style={{
+                                                textAlign: "right",
+                                                marginTop: "10px",
+                                            }}
+                                        >
+                                            <a
+                                                href="#!"
+                                                onClick={handleCloseAlert}
+                                                style={{
+                                                    fontWeight: "bold",
+                                                    textDecoration: "underline",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                close
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : accountVerifiedMessage ? (
+                                    <div
+                                        className="alert alert-success text-center"
+                                        role="alert"
+                                    >
+                                        {accountVerifiedMessage}
+                                        <div
+                                            style={{
+                                                textAlign: "right",
+                                                marginTop: "10px",
+                                            }}
+                                        >
+                                            <a
+                                                href="#!"
+                                                onClick={handleCloseAlert}
+                                                style={{
+                                                    fontWeight: "bold",
+                                                    textDecoration: "underline",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                close
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : signUpSuccessEmail ? (
+                                    <div
+                                        className="alert alert-success"
+                                        role="alert"
                                         style={{
-                                            marginLeft: "5px",
-                                            fontWeight: "bold",
-                                            textDecoration: "underline",
-                                            cursor: "pointer",
+                                            position: "relative",
+                                            padding: "1rem 1rem",
+                                            marginBottom: "1rem",
+                                            border: "1px solid transparent",
+                                            borderRadius: ".25rem",
                                         }}
                                     >
-                                        here
-                                    </a>{" "}
-                                    to resend the email.
-                                </p>
-                            </div>
-                        ) : null}
+                                        <p style={{ margin: 0 }}>
+                                            An email has been sent to{" "}
+                                            <strong>
+                                                {signUpSuccessEmail}
+                                            </strong>
+                                            , please follow the steps to verify
+                                            your account.
+                                        </p>
+                                        <p style={{ marginTop: "1rem" }}>
+                                            If you do not receive the email
+                                            within <strong>5 minutes</strong>,
+                                            click
+                                            <a
+                                                href="#!"
+                                                onClick={
+                                                    handleResendActivationEmail
+                                                }
+                                                style={{
+                                                    marginLeft: "5px",
+                                                    fontWeight: "bold",
+                                                    textDecoration: "underline",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                here
+                                            </a>{" "}
+                                            to resend the email.
+                                        </p>
+                                        <div
+                                            style={{
+                                                textAlign: "right",
+                                                marginTop: "10px",
+                                            }}
+                                        >
+                                            <a
+                                                href="#!"
+                                                onClick={handleCloseAlert}
+                                                style={{
+                                                    fontWeight: "bold",
+                                                    textDecoration: "underline",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                close
+                                            </a>
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </>
+                        )}
                     </>
 
                     <div className="form-group">

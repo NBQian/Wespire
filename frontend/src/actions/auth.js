@@ -149,7 +149,6 @@ export const login = (email, password) => async (dispatch) => {
     }
 };
 
-// In your actions file
 export const signup =
     (name, email, password, re_password) => async (dispatch) => {
         const config = {

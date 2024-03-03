@@ -63,6 +63,13 @@ const StudentList = () => {
                 size: 150,
                 flex: 1,
             },
+            {
+                accessorKey: "DateOfBirth",
+                header: "Date of Birth",
+                enableClickToCopy: true,
+                size: 150,
+                flex: 1,
+            },
         ],
         []
     );
@@ -147,26 +154,26 @@ const StudentList = () => {
             variant: "outlined",
         },
 
-        renderDetailPanel: ({ row }) => (
-            <Box
-                sx={{
-                    alignItems: "center",
-                    display: "flex",
-                    justifyContent: "space-around",
-                    left: "30px",
-                    maxWidth: "1000px",
-                    position: "sticky",
-                    width: "100%",
-                }}
-            >
-                <Box sx={{ p: 2 }}>
-                    <Typography>
-                        Registration No: {row.original.RegistrationNo}
-                    </Typography>
-                    <Typography>Course: {row.original.Course}</Typography>
-                </Box>
-            </Box>
-        ),
+        // renderDetailPanel: ({ row }) => (
+        //     <Box
+        //         sx={{
+        //             alignItems: "center",
+        //             display: "flex",
+        //             justifyContent: "space-around",
+        //             left: "30px",
+        //             maxWidth: "1000px",
+        //             position: "sticky",
+        //             width: "100%",
+        //         }}
+        //     >
+        //         <Box sx={{ p: 2 }}>
+        //             <Typography>
+        //                 Registration No: {row.original.RegistrationNo}
+        //             </Typography>
+        //             <Typography>Course: {row.original.Course}</Typography>
+        //         </Box>
+        //     </Box>
+        // ),
         renderRowActionMenuItems: ({ row, closeMenu }) => [
             <MenuItem
                 key={0}

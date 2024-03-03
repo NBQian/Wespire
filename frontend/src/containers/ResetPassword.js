@@ -38,10 +38,10 @@ const ResetPassword = ({ reset_password }) => {
                         {/* Use alert-success for consistent styling */}
                         <h2 className="mb-3">Check Your Email</h2>
                         <p className="mb-4">
-                            An email has been sent to <strong>{email}</strong>.
+                            if <strong>{email}</strong>.
                             <br />
-                            If it has been registered with us, you will receive
-                            the email shortly.
+                            has been registered with us, you will receive
+                            instructions to reset your password shortly.
                         </p>
                     </div>
                     <Link to="/login" className="btn btn-primary">
@@ -77,6 +77,7 @@ const ResetPassword = ({ reset_password }) => {
                                     size="sm"
                                     role="status"
                                     aria-hidden="true"
+                                    style={{ marginRight: "10px" }}
                                 />
                                 <span> Loading...</span>
                             </>

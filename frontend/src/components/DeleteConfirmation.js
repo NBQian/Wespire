@@ -15,11 +15,8 @@ const DeleteConfirmation = ({ show, onConfirm, onCancel }) => {
             onHide={onCancel}
             onExited={() => setIsDeleted(false)}
         >
-            <Modal.Header>
+            <Modal.Header closeButton>
                 <Modal.Title>Confirm Deletion</Modal.Title>
-                <Button variant="secondary" onClick={onCancel}>
-                    Cancel
-                </Button>
             </Modal.Header>
             <Modal.Body>
                 Are you sure you want to delete this Client?

@@ -1,23 +1,65 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Row, Form, Button } from "react-bootstrap";
 import { addStudent, updateStudent } from "../services/StudentService";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const StudentFormModal = (props) => {
     const { isUpdate, student, setUpdated, onHide, ...modalProps } = props;
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [formData, setFormData] = useState({
+        FirstName: "",
+        LastName: "",
+        Email: "",
+        PhoneNumber: "",
+        DateOfBirth: null, // Use null for the initial state of DateOfBirth
+    });
+
     useEffect(() => {
-        if (!props.show) {
+        // Populate formData when the modal is shown and if it's an update operation
+        if (props.show && isUpdate && student) {
+            setFormData({
+                FirstName: student.FirstName || "",
+                LastName: student.LastName || "",
+                Email: student.Email || "",
+                PhoneNumber: student.PhoneNumber || "",
+                DateOfBirth: student.DateOfBirth || "",
+            });
+        } else {
             setIsSubmitted(false);
+            // Reset form data when the modal is closed
+            setFormData({
+                FirstName: "",
+                LastName: "",
+                Email: "",
+                PhoneNumber: "",
+                DateOfBirth: null,
+            });
         }
-    }, [props.show]);
+    }, [props.show, isUpdate, student]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prevState) => ({
+            ...prevState,
+            [name]: value,
+        }));
+    };
+
+    const handleDateChange = (date) => {
+        setFormData((prevState) => ({
+            ...prevState,
+            DateOfBirth: date.toISOString().split("T")[0],
+        }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const formTarget = e.target;
+        console.log(formData);
 
         const action = isUpdate
-            ? updateStudent(student.studentId, formTarget)
-            : addStudent(formTarget);
+            ? updateStudent(student.studentId, formData)
+            : addStudent(formData);
 
         action.then(
             (result) => {
@@ -29,6 +71,7 @@ const StudentFormModal = (props) => {
                 setUpdated(true);
             },
             (error) => {
+                console.log(error.message);
                 alert(
                     isUpdate
                         ? "Failed to Update Student"
@@ -51,8 +94,8 @@ const StudentFormModal = (props) => {
                     className="centered-modal-title"
                 >
                     {isUpdate
-                        ? "Update Student Information"
-                        : "Add Student Information"}
+                        ? "Update Client Information"
+                        : "Add Client Information"}
                 </Modal.Title>
             </Modal.Header>
 
@@ -67,6 +110,7 @@ const StudentFormModal = (props) => {
                                 required
                                 placeholder=""
                                 defaultValue={isUpdate ? student.FirstName : ""}
+                                onChange={handleChange}
                             />
                         </Form.Group>
                         <Form.Group controlId="LastName">
@@ -77,18 +121,20 @@ const StudentFormModal = (props) => {
                                 required
                                 placeholder=""
                                 defaultValue={isUpdate ? student.LastName : ""}
+                                onChange={handleChange}
                             />
                         </Form.Group>
-                        <Form.Group controlId="RegistrationNo">
-                            <Form.Label>Registration No.</Form.Label>
-                            <Form.Control
-                                type="text"
-                                name="RegistrationNo"
-                                required
-                                placeholder=""
-                                defaultValue={
-                                    isUpdate ? student.RegistrationNo : ""
-                                }
+                        <Form.Group controlId="DateOfBirth">
+                            <Form.Label>Date of Birth</Form.Label>
+                            <ReactDatePicker
+                                selected={formData.DateOfBirth}
+                                onChange={handleDateChange}
+                                dateFormat="yyyy-MM-dd"
+                                className="form-control custom-datepicker"
+                                placeholderText="Select date"
+                                showYearDropdown
+                                yearDropdownItemNumber={40}
+                                scrollableYearDropdown
                             />
                         </Form.Group>
                         <Form.Group controlId="Email">
@@ -99,16 +145,7 @@ const StudentFormModal = (props) => {
                                 required
                                 placeholder=""
                                 defaultValue={isUpdate ? student.Email : ""}
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="Course">
-                            <Form.Label>Course</Form.Label>
-                            <Form.Control
-                                type="text"
-                                name="Course"
-                                required
-                                placeholder=""
-                                defaultValue={isUpdate ? student.Course : ""}
+                                onChange={handleChange}
                             />
                         </Form.Group>
                         <Form.Group controlId="PhoneNumber">
@@ -121,6 +158,7 @@ const StudentFormModal = (props) => {
                                     isUpdate ? student.PhoneNumber : ""
                                 }
                                 placeholder="e.g., +1234567890"
+                                onChange={handleChange}
                             />
                         </Form.Group>
 

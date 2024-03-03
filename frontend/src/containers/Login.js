@@ -11,6 +11,7 @@ const Login = ({
     error,
     signUpSuccessEmail,
     resendActivationEmail,
+    existingEmail,
     clearErrors,
 }) => {
     const [alertVisible, setAlertVisible] = useState(true);
@@ -26,23 +27,26 @@ const Login = ({
         : "";
 
     useEffect(() => {
-        if (error || signUpSuccessEmail) {
+        console.log(error);
+        if (error || signUpSuccessEmail || existingEmail) {
             setAlertVisible(true);
         }
-    }, [error, signUpSuccessEmail]);
+    }, [error, signUpSuccessEmail, existingEmail]);
+
     useEffect(() => {
         document.body.style.background =
             "linear-gradient(to right, rgb(24, 32, 176), rgb(224, 196, 38))";
 
         return () => {
             document.body.style.background = "none";
-            clearErrors();
         };
-    }, [clearErrors]);
+    });
 
     const handleResendActivationEmail = () => {
         if (signUpSuccessEmail) {
             resendActivationEmail(signUpSuccessEmail);
+        } else {
+            resendActivationEmail(existingEmail);
         }
     };
 
@@ -58,6 +62,7 @@ const Login = ({
 
     const onSubmit = async (e) => {
         e.preventDefault();
+        setAlertVisible(true);
         login(email, password);
     };
 
@@ -183,6 +188,50 @@ const Login = ({
                                             </a>
                                         </div>
                                     </div>
+                                ) : existingEmail ? (
+                                    <div
+                                        className="alert alert-danger text-center"
+                                        role="alert"
+                                    >
+                                        There is an existing account associated
+                                        with <strong>{existingEmail}</strong>.
+                                        If you have previously signed up but
+                                        have not activated your account, you can
+                                        <a
+                                            href="#!"
+                                            onClick={
+                                                handleResendActivationEmail
+                                            }
+                                            style={{
+                                                fontWeight: "bold",
+                                                textDecoration: "underline",
+                                                cursor: "pointer",
+                                                marginLeft: "5px",
+                                            }}
+                                        >
+                                            resend activation email
+                                        </a>
+                                        . Otherwise, you can try resetting your
+                                        password below.
+                                        <div
+                                            style={{
+                                                textAlign: "right",
+                                                marginTop: "10px",
+                                            }}
+                                        >
+                                            <a
+                                                href="#!"
+                                                onClick={handleCloseAlert}
+                                                style={{
+                                                    fontWeight: "bold",
+                                                    textDecoration: "underline",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                close
+                                            </a>
+                                        </div>
+                                    </div>
                                 ) : null}
                             </>
                         )}
@@ -231,6 +280,7 @@ const mapStateToProps = (state) => ({
     isAuthenticated: state.auth.isAuthenticated,
     error: state.auth.error,
     signUpSuccessEmail: state.auth.signUpSuccessEmail,
+    existingEmail: state.auth.existingEmail,
 });
 
 export default connect(mapStateToProps, {

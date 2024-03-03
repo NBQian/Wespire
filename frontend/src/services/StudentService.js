@@ -21,7 +21,10 @@ export function addStudent(summary) {
 export function updateStudent(summaryId, summary) {
     return axios
         .put(`${BASE_URL}/clients/${summaryId}/`, summary)
-        .then((response) => response.data);
+        .then((response) => response.data)
+        .catch((error) => {
+            console.log(error.response.status);
+        });
 }
 
 export function deleteStudent(summaryId) {

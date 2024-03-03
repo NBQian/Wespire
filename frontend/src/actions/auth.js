@@ -141,9 +141,7 @@ export const login = (email, password) => async (dispatch) => {
         dispatch({
             type: LOGIN_FAIL,
             payload: {
-                error:
-                    // err.response.data.detail ||
-                    "Login failed. Please check your email and password and try again.",
+                error: "Login failed. Please check your email and password and try again.",
             },
         });
     }
@@ -173,11 +171,14 @@ export const signup =
 
             dispatch({
                 type: SIGNUP_SUCCESS,
-                payload: { message: "Verification email sent", email: email },
+                payload: { email: email },
             });
         } catch (err) {
             dispatch({
                 type: SIGNUP_FAIL,
+                payload: {
+                    email: email,
+                },
             });
         }
     };

@@ -77,10 +77,19 @@ function authReducer(state = initialState, action) {
             return {
                 ...state,
                 isAuthenticated: false,
-                signUpSuccessEmail: payload.email, // Store the user's email upon successful signup
-                error: null, // Reset any previous errors
+                signUpSuccessEmail: payload.email,
+                error: null,
             };
         case SIGNUP_FAIL:
+            return {
+                ...state,
+                access: null,
+                refresh: null,
+                isAuthenticated: false,
+                user: null,
+                // error: payload.error,
+                existingEmail: payload.email,
+            };
         case LOGOUT:
             localStorage.removeItem("access");
             localStorage.removeItem("refresh");
@@ -90,7 +99,6 @@ function authReducer(state = initialState, action) {
                 refresh: null,
                 isAuthenticated: false,
                 user: null,
-                error: null,
             };
         case PASSWORD_RESET_SUCCESS:
         case PASSWORD_RESET_FAIL:

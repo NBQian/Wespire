@@ -11,7 +11,6 @@ import os
 from django.conf import settings
 from .models import Product, FuturePlan
 from reportlab.lib.units import inch
-import fpdf
 from fpdf import FPDF
 import time
 import pandas as pd
@@ -152,7 +151,6 @@ def generate_pdf(student_summary):
     # Products Page
     product_table_buffer = create_pdf_with_tables(products)
 
-    # Load your header PDF files into BytesIO buffers
     header1_path = 'header1.pdf'
     header2_path = 'header2.pdf'
 
@@ -225,8 +223,6 @@ def create_pdf_with_tables(products):
     second_half_data = process_second_table_data(products, second_half_fields)
 
     
-
-
     # Create the document with custom canvas method
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
     
@@ -257,16 +253,6 @@ def create_pdf_with_tables(products):
     doc.build(elements)
     buffer.seek(0)
     return buffer
-
-
-
-
-
-
-
-
-
-
 
 
 

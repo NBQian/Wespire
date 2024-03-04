@@ -51,6 +51,29 @@ const emptyProductTemplate = {
     TotalPremiumsPaid: "",
 };
 
+const productFieldLimits = {
+    ProductName: 100,
+    ProductNumber: 100,
+    Company: 100,
+    Type: 100,
+    Mode: 100,
+    MaturityPremiumEndDate: 100,
+    WholeLife: 10, // Considering max_digits=10, decimal_places=2
+    Endowment: 10, // Considering max_digits=10, decimal_places=2
+    Term: 10, // Considering max_digits=10, decimal_places=2
+    InvLinked: 10, // Considering max_digits=10, decimal_places=2
+    TotalDeathCoverage: 10, // Considering max_digits=10, decimal_places=2
+    TotalPermanentDisability: 10, // Considering max_digits=10, decimal_places=2
+    EarlyCriticalIllness: 10, // Considering max_digits=10, decimal_places=2
+    Accidental: 10, // Considering max_digits=10, decimal_places=2
+    Monthly: 10, // Considering max_digits=10, decimal_places=2
+    Quarterly: 10, // Considering max_digits=10, decimal_places=2
+    SemiAnnual: 10, // Considering max_digits=10, decimal_places=2
+    Yearly: 10, // Considering max_digits=10, decimal_places=2
+    CurrentValue: 10, // Considering max_digits=10, decimal_places=2
+    TotalPremiumsPaid: 10, // Considering max_digits=10, decimal_places=2
+};
+
 const emptyFuturePlanTemplate = {
     Type: "",
     CurrentSumAssured: "",
@@ -77,7 +100,7 @@ const StudentSummaryFormModal = ({
     const userId = useSelector((state) => state.auth.user.id);
     const [code, setCode] = useState("");
     const [agent, setAgent] = useState([emptySummaryTemplate]);
-    const [products, setProducts] = useState([emptyProductTemplate]);
+    const [products, setProducts] = useState([{ ...emptyProductTemplate }]);
     const [futurePlans, setFuturePlans] = useState([emptyFuturePlanTemplate]);
     const [currentPage, setCurrentPage] = useState(0);
     const [stage, setStage] = useState("agent");
@@ -134,7 +157,7 @@ const StudentSummaryFormModal = ({
                 // Setup for adding new entry
                 const newCode = `${userId}-${Date.now()}`;
                 setCode(newCode);
-                setProducts([emptyProductTemplate]);
+                setProducts([{ ...emptyProductTemplate }]);
                 setFuturePlans(
                     futurePlanTypes.map((type) => ({
                         ...emptyFuturePlanTemplate,
@@ -485,7 +508,7 @@ const StudentSummaryFormModal = ({
                                         </Form.Label>
                                         <Form.Control
                                             as="textarea"
-                                            rows={3} // Starting rows
+                                            rows={3}
                                             name={field}
                                             value={
                                                 products[currentPage][field] ||
@@ -494,7 +517,7 @@ const StudentSummaryFormModal = ({
                                             onChange={handleProductChange}
                                             style={{
                                                 resize: "none",
-                                            }} // Optional: Prevent manual resizing
+                                            }}
                                         />
                                     </Form.Group>
                                 );
@@ -538,7 +561,6 @@ const StudentSummaryFormModal = ({
                                 );
                             }
 
-                            // Default handling for other fields
                             return (
                                 <Form.Group key={field} className="mb-3">
                                     <Form.Label>{label}</Form.Label>
@@ -548,6 +570,7 @@ const StudentSummaryFormModal = ({
                                         value={
                                             products[currentPage][field] || ""
                                         }
+                                        maxLength={productFieldLimits[field]}
                                         onChange={handleProductChange}
                                     />
                                 </Form.Group>

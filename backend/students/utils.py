@@ -119,6 +119,7 @@ def queryset_to_list_of_dicts(queryset):
     return list_of_dicts
 
 def generate_pdf(student_summary):
+    print(student_summary)
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
 
     pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')

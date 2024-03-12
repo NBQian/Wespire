@@ -47,5 +47,3 @@ axios.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-
-// Export axios instance if needed, or just keep the interceptor setup

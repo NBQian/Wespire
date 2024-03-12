@@ -102,7 +102,7 @@ const StudentFormModal = (props) => {
             <Modal.Body>
                 <Row>
                     <Form onSubmit={handleSubmit}>
-                        <Form.Group controlId="FirstName">
+                        <Form.Group controlId="FirstName" className="mb-3">
                             <Form.Label>First Name</Form.Label>
                             <Form.Control
                                 type="text"
@@ -113,7 +113,7 @@ const StudentFormModal = (props) => {
                                 onChange={handleChange}
                             />
                         </Form.Group>
-                        <Form.Group controlId="LastName">
+                        <Form.Group controlId="LastName" className="mb-3">
                             <Form.Label>Last Name</Form.Label>
                             <Form.Control
                                 type="text"
@@ -124,7 +124,7 @@ const StudentFormModal = (props) => {
                                 onChange={handleChange}
                             />
                         </Form.Group>
-                        <Form.Group controlId="DateOfBirth">
+                        <Form.Group controlId="DateOfBirth" className="mb-3">
                             <Form.Label>Date of Birth</Form.Label>
                             <ReactDatePicker
                                 selected={formData.DateOfBirth}
@@ -137,7 +137,7 @@ const StudentFormModal = (props) => {
                                 scrollableYearDropdown
                             />
                         </Form.Group>
-                        <Form.Group controlId="Email">
+                        <Form.Group controlId="Email" className="mb-3">
                             <Form.Label>Email</Form.Label>
                             <Form.Control
                                 type="text"
@@ -148,7 +148,7 @@ const StudentFormModal = (props) => {
                                 onChange={handleChange}
                             />
                         </Form.Group>
-                        <Form.Group controlId="PhoneNumber">
+                        <Form.Group controlId="PhoneNumber" className="mb-3">
                             <Form.Label>Phone Number</Form.Label>
                             <Form.Control
                                 type="tel"

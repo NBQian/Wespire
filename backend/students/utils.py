@@ -98,9 +98,6 @@ def load_pdf_into_buffer(pdf_file_path):
     with open(pdf_file_path, 'rb') as pdf_file:
         return BytesIO(pdf_file.read())
 
-
-
-
 def queryset_to_list_of_dicts(queryset):
     list_of_dicts = []
     for product in queryset:
@@ -150,7 +147,7 @@ def generate_pdf(student_summary):
     add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone)
 
     # Products Page
-    product_table_buffer = create_pdf_with_tables(products)
+    product_table_buffer = generate_product_table(products)
 
     header1_path = 'header1.pdf'
     header2_path = 'header2.pdf'
@@ -166,7 +163,7 @@ def generate_pdf(student_summary):
 
     # Pie Chart Page
     pdf.add_page()
-    generate_pie_charts(student_summary, pdf, pdf_dir, plans)
+    generate_pie_charts(pdf, pdf_dir, plans)
 
     pdf_content = pdf.output(dest='S').encode('latin1')  # Get PDF data as a byte string
 
@@ -187,24 +184,39 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import mm
-def create_pdf_with_tables(products):
+from reportlab.lib.colors import white
+from reportlab.lib.enums import TA_CENTER
+
+
+
+def generate_product_table(products):
     buffer = BytesIO()
     custom_headers = {
     "TotalPermanentDisability": "TPD SA",
     "TotalDeathCoverage": "Death SA",
     "OtherBenefitsRemarks": "Remarks",
+    "MaturityPremiumEndDate": "Maturity Date"
     }
-    excluded_fields = ['unique_code', 'id', 'Type']
+    excluded_fields = ['unique_code', 'id', 'Type', "PremiumPayoutMode", "PremiumPayoutYear", "PremiumPayoutAmount"]
     filtered_fields = [field for field in list(products[0].keys()) if field not in excluded_fields]
 
     first_half_fields = filtered_fields[:12]
     second_half_fields = filtered_fields[12:]
 
-    first_half_headers = ["No."] + [custom_headers.get(field, camel_case_to_words(field)) for field in first_half_fields]
-    second_half_headers = ["No."] + [custom_headers.get(field, camel_case_to_words(field)) for field in second_half_fields]
-
     stylesheet = getSampleStyleSheet()
-    remarks_style = ParagraphStyle('remarks_style', parent=stylesheet['Normal'], fontSize=8, spaceBefore=0, spaceAfter=0, leftIndent=0, rightIndent=0, firstLineIndent=0, leading=9, wordWrap='CJK')
+    normal_style = stylesheet['Normal']
+
+    title_style = ParagraphStyle('Title', parent=normal_style, fontSize=10, leading=12, spaceBefore=6, spaceAfter=6, textColor=white, alignment=TA_CENTER)
+
+    # Process headers to use Paragraph for increased height
+    def process_headers(headers):
+        return [Paragraph('<b>{}</b>'.format(header), title_style) for header in headers]
+
+
+    first_half_headers = process_headers(["No."] + [custom_headers.get(field, camel_case_to_words(field)) for field in first_half_fields])
+    second_half_headers = process_headers(["No."] + [custom_headers.get(field, camel_case_to_words(field)) for field in second_half_fields])
+
+    remarks_style = ParagraphStyle('remarks_style', parent=normal_style, fontSize=8, spaceBefore=0, spaceAfter=0, leftIndent=0, rightIndent=0, firstLineIndent=0, leading=9, wordWrap='CJK')
 
     # Process second table data to use Paragraph for "OtherBenefitsRemarks"
     def process_second_table_data(products, fields):
@@ -226,13 +238,15 @@ def create_pdf_with_tables(products):
     
     # Create the document with custom canvas method
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
-    
+    title_row_height = 100
+    light_grey = colors.Color(0.784, 0.784, 0.784)
+
     def get_table_style():
         return TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
-            ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+            ('INNERGRID', (0, 0), (-1, -1), 0.25, light_grey),
+            ('BOX', (0, 0), (-1, -1), 0.25, light_grey),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#293486")),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -242,7 +256,7 @@ def create_pdf_with_tables(products):
         ])
     table_style = get_table_style()
     # Specify column widths for the second table, fixed width for "OtherBenefitsRemarks"
-    col_widths_second_half = [None] + [35 * mm] + [None] * (len(second_half_headers) - 2)
+    col_widths_second_half = [None] + [45 * mm] + [None] * (len(second_half_headers) - 2)
 
     first_table = Table([first_half_headers] + first_half_data)
     second_table = Table([second_half_headers] + second_half_data, colWidths=col_widths_second_half)
@@ -255,32 +269,6 @@ def create_pdf_with_tables(products):
     buffer.seek(0)
     return buffer
 
-
-
-def add_bar_graph_to_pdf(pdf, products):
-    # Generate data for the bar graph
-    categories, values = create_bar_graph_data(products)
-    
-    # Create the bar graph image
-    create_bar_graph(categories, values)
-    
-    # Ensure the bar graph image is saved to a known location
-    bar_graph_image_path = 'bar_graph.png'
-    
-    # Add a new horizontal page for the bar graph
-    pdf.add_page(orientation='L')
-    
-    # Calculate image position to center it (assuming A4 landscape)
-    pdf_width = 297  # A4 width in mm
-    pdf_height = 210  # A4 height in mm
-    img_width = 200  # Adjust based on your image size
-    img_height = 100  # Adjust based on your image size
-    x_centered = (pdf_width - img_width) / 2
-    y_centered = (pdf_height - img_height) / 2
-    
-    # Insert the bar graph image into the PDF
-    pdf.image(bar_graph_image_path, x=x_centered, y=y_centered, w=img_width, h=img_height)
-
 from reportlab.lib import pagesizes, colors
 from reportlab.lib.pagesizes import landscape, A4
 from reportlab.lib.units import mm
@@ -290,89 +278,122 @@ from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.lib.colors import HexColor
 from reportlab.pdfgen.canvas import Canvas
-
+from matplotlib.ticker import FuncFormatter
 
 # Assuming 'products' is your list of product dictionaries
 def create_bar_graph_data(products):
     # Initialize sums for each category
     categories = ['TotalDeathCoverage', 'TotalPermanentDisability', 'EarlyCriticalIllness', 'CriticalIllness', 'Accidental']
-    sums = {category: 0 for category in categories}
+    headers = {'TotalDeathCoverage': "Total Death\nCoverage", 'TotalPermanentDisability': 'Total Permanent\nDisability',
+               'EarlyCriticalIllness': 'Early Critical\nIllness', 'CriticalIllness': 'Critical Illness', 'Accidental': 'Accidental'}
+    sums = {header: 0 for header in headers.values()}
     
     # Sum up the amounts for each category
     for product in products:
         for category in categories:
-            sums[category] += product.get(category, 0)
+            sums[headers[category]] += product.get(category, 0)
     
-    return categories, list(sums.values())
+    return sums
 
-def create_bar_graph(categories, decimal_values):
-    values = [float(val) for val in decimal_values]
-    drawing_width = 842
-    drawing_height = 400
-    chart_width = 500
-    # Increased width for better separation of field names
-    drawing = Drawing(drawing_width, drawing_height)  # Adjusted width to 600
-    bc = VerticalBarChart()
-    bc.x = (drawing_width - chart_width) / 2
-    bc.y = 50
-    bc.height = 300
-    bc.width = chart_width  # Adjusted width to 500 for the chart itself
+def save_bar_graph(sums, filename="bar_graph.png"):
+    categories = list(sums.keys())
+    values = list(sums.values())
 
-    bc.data = [values]
-    bc.barWidth = 10
-    bc.categoryAxis.categoryNames = [camel_case_to_words(cat) for cat in categories]
-    bc.categoryAxis.labels.boxAnchor = 'n'
-    # bc.categoryAxis.labels.angle = 45  # Optional: Rotate labels if still cramped
-
-    max_value = max(values)
-    valueMax = max_value + (10 - max_value % 10)
-    valueStep = valueMax / 10
-
-    bc.barSpacing = 15
-    bc.valueAxis.valueMin = 0
-    bc.valueAxis.valueMax = valueMax
-    bc.valueAxis.valueStep = valueStep
-    bc.barLabelFormat = '$%d'
-    bc.barLabels.nudge = 10
-
-    # Set the bar color to #293486
-    bc.bars[0].fillColor = HexColor("#293486")
-
-    drawing.add(bc)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    bars = ax.bar(categories, values, color='#293486', width=0.5) 
     
-    return drawing
+    ax.tick_params(axis='x', labelsize=13, pad=13)
+    ax.tick_params(axis='y', labelsize=12, pad=10)
+    ax.set_title('Total Sum Assured', fontsize=20, fontname='Arial', fontweight='bold', pad=25)
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 
-def create_bar_graph(categories, values):
-    plt.figure(figsize=(10, 6))
+    # Custom formatter to add "S$" in front of y-axis values
+    def currency(x, pos):
+        return 'S$ ' + str(int(x))
+    ax.yaxis.set_major_formatter(FuncFormatter(currency))
 
-    # Make the bars narrower by specifying the width
-    bars = plt.bar(categories, values, color='#293486', width=0.4)  # Adjust width as needed
+    # Remove top and right lines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
-    # Remove top and right spines
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
+    # Set y-axis label further away from the scales
+    ax.set_ylabel('Sum Assured', labelpad=20, fontsize=12)
 
-    # Format y-axis with dollar sign
-    formatter = FuncFormatter(lambda x, _: f'${x}')
-    plt.gca().yaxis.set_major_formatter(formatter)
 
-    # Add value labels on top of each bar
+    # Adding value labels on top of each bar with adjusted font size
     for bar in bars:
         height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width() / 2, height, f'{height}', ha='center', va='bottom')
+        ax.annotate(f'S${height}',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom',
+                    fontsize=12)  # Adjust the fontsize as needed
 
-    plt.ylabel('Sum Assured', labelpad=20)
-    plt.title('Current Protections', pad=10)
-    plt.xticks(rotation=45, ha='right')  # Rotate labels for better fit
     plt.tight_layout()
-    plt.savefig('bar_graph.png', dpi = 300)
+    plt.savefig(filename)
+    # plt.savefig(filename, dpi = 300)
     plt.close()
+def add_bar_graph_to_pdf(pdf, products):
+    sums = create_bar_graph_data(products)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    header_path = os.path.join(script_dir, "img", "CPHeader.png")
+    # Save the bar graph to an image
+    graph_filename = "temp_bar_graph.png"
+    save_bar_graph(sums, graph_filename)
+
+    # Add a portrait page
+    pdf.add_page()
+    pdf.image(header_path, x = 0, y = 0, w = 210)  # Assume the header fits in the top part
+
+    header_height = 30  # Adjust according to your header's actual height
+
+    # Insert the bar graph image slightly below the header
+    pdf.image(graph_filename, x=4, y=header_height + 10, w=pdf.w - 20, h=(pdf.h / 2) - 20 - header_height)
+
+    # Adjust the Y position for the table to start below the bar graph, considering header height
+    pdf.set_y(pdf.h / 2 + header_height / 2)
+
+    add_bar_graph_table(pdf, sums)
+
+    # Remove the temporary graph image file
+    os.remove(graph_filename)
 
 
+def add_bar_graph_table(pdf, sums):
+    pdf.set_font('Arial', 'B', 12)  # Set font to Arial, bold, size 12 for the header
+    line_height = pdf.font_size * 3
+    col_width = (pdf.w - pdf.l_margin - pdf.r_margin) / 2.5  # Adjust for 2 columns in full page width
+
+    total_table_width = col_width * 2  # Total table width for 2 columns
+
+    # Calculate starting x position to center the table
+    start_x = (pdf.w - total_table_width) / 2
+
+    pdf.set_x(start_x)
     
+    # Header with background color #293486 and white text
+    pdf.set_fill_color(41, 52, 134)  # RGB equivalent of #293486
+    pdf.set_text_color(255, 255, 255)  # Set text color to white
+    pdf.cell(col_width, line_height, " Category", border=1, fill=True, align='C')
+    pdf.cell(col_width, line_height, " Coverage", border=1, fill=True, align='C')
+    pdf.ln(line_height)
+    
+    pdf.set_font('Arial', '', 12)  # Reset font to Arial, normal, size 12 for row data
+    row_fill = False
+    for key, value in sums.items():
+        pdf.set_x(start_x)
+        # Alternate row color between white and grey (#e6e6e6)
+        if row_fill:
+            pdf.set_fill_color(230, 230, 230)  # RGB equivalent of #e6e6e6
+        else:
+            pdf.set_fill_color(255, 255, 255)  # Set fill color back to white for alternating rows
+        
+        pdf.set_text_color(0, 0, 0)  # Reset text color to black for row data
+        pdf.cell(col_width, line_height, str(f' {key}'), border=1, fill=row_fill, align='C')
+        pdf.cell(col_width, line_height, f" S$ {value}", border=1, fill=row_fill, align='C')
+        pdf.ln(line_height)
+        row_fill = not row_fill  # Toggle the fill for the next row
 
 def camel_case_to_words(s):
     """Convert CamelCase to words with spaces."""
@@ -439,12 +460,10 @@ def camel_case_to_title(camel_case_str):
 
 
 
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Patch
 import matplotlib.pyplot as plt
 import os
-from matplotlib.patches import Patch
-
-def generate_table_image(plan, table_img_path):
+def generate_pie_chart_tables(plan, table_img_path):
     plt.rcParams.update({'font.family':'monospace'})
     
     fig, ax = plt.subplots(figsize=(4, 1))
@@ -470,7 +489,7 @@ def generate_table_image(plan, table_img_path):
     plt.rcdefaults()
 
 
-def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
+def generate_pie_charts(pdf, pdf_dir, plans):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     header_path = os.path.join(script_dir, "img", "LHPie.png")
     pdf.image(header_path, x = 0, y = 0, w = 210)
@@ -493,9 +512,6 @@ def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
     fig.savefig(legend_path, bbox_inches='tight', pad_inches=0, transparent=True, dpi = 300)
     plt.close(fig)
 
-    
-    
-    
     for i, plan in enumerate(plans):
         if i == 4:
             x_position = 65
@@ -529,9 +545,9 @@ def generate_pie_charts(student_summary, pdf, pdf_dir, plans):
         img_y = y_position + (chart_width_mm - img_size) / 2
         pdf.image(center_img_path, x=img_x, y=img_y, w=img_size, h=img_size)
 
-        # Assuming you have a function `generate_table_image(plan, table_img_path)` defined elsewhere
+        # Assuming you have a function `generate_pie_chart_tables(plan, table_img_path)` defined elsewhere
         table_img_path = os.path.join(pdf_dir, f"table_{i}.png")
-        generate_table_image(plan, table_img_path)
+        generate_pie_chart_tables(plan, table_img_path)
 
         table_y_position = y_positions[i // 2] + 65  # Adjust based on the actual size of the pie charts
         pdf.image(table_img_path, x=x_position, y=table_y_position, w=chart_width_mm)

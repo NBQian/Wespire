@@ -55,6 +55,9 @@ class Product(models.Model):
     MaturityPremiumEndDate = models.CharField(max_length=100)
     CurrentValue = models.DecimalField(max_digits=10, decimal_places=2)
     TotalPremiumsPaid = models.DecimalField(max_digits=10, decimal_places=2)
+    PremiumPayoutMode = models.CharField(max_length=100, blank = True, null = True)
+    PremiumPayoutYear = models.CharField(max_length=100, blank = True, null = True)
+    PremiumPayoutAmount = models.DecimalField(max_digits=10, decimal_places=2, blank = True, null = True)
 
 class FuturePlan(models.Model):
     unique_code = models.CharField(max_length=255)

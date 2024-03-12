@@ -49,6 +49,9 @@ const emptyProductTemplate = {
     MaturityPremiumEndDate: "",
     CurrentValue: "",
     TotalPremiumsPaid: "",
+    PremiumPayoutMode: "",
+    PremiumPayoutYear: "",
+    PremiumPayoutAmount: "",
 };
 
 const productFieldLimits = {
@@ -58,20 +61,20 @@ const productFieldLimits = {
     Type: 100,
     Mode: 100,
     MaturityPremiumEndDate: 100,
-    WholeLife: 10, // Considering max_digits=10, decimal_places=2
-    Endowment: 10, // Considering max_digits=10, decimal_places=2
-    Term: 10, // Considering max_digits=10, decimal_places=2
-    InvLinked: 10, // Considering max_digits=10, decimal_places=2
-    TotalDeathCoverage: 10, // Considering max_digits=10, decimal_places=2
-    TotalPermanentDisability: 10, // Considering max_digits=10, decimal_places=2
-    EarlyCriticalIllness: 10, // Considering max_digits=10, decimal_places=2
-    Accidental: 10, // Considering max_digits=10, decimal_places=2
-    Monthly: 10, // Considering max_digits=10, decimal_places=2
-    Quarterly: 10, // Considering max_digits=10, decimal_places=2
-    SemiAnnual: 10, // Considering max_digits=10, decimal_places=2
-    Yearly: 10, // Considering max_digits=10, decimal_places=2
-    CurrentValue: 10, // Considering max_digits=10, decimal_places=2
-    TotalPremiumsPaid: 10, // Considering max_digits=10, decimal_places=2
+    WholeLife: 10,
+    Endowment: 10,
+    Term: 10,
+    InvLinked: 10,
+    TotalDeathCoverage: 10,
+    TotalPermanentDisability: 10,
+    EarlyCriticalIllness: 10,
+    Accidental: 10,
+    Monthly: 10,
+    Quarterly: 10,
+    SemiAnnual: 10,
+    Yearly: 10,
+    CurrentValue: 10,
+    TotalPremiumsPaid: 10,
 };
 
 const emptyFuturePlanTemplate = {
@@ -181,7 +184,7 @@ const StudentSummaryFormModal = ({
     }, [modalProps.show]);
 
     const isDecimalValid = (value) => {
-        return /^-?\d*(\.\d+)?$/.test(value); // Matches decimal numbers, including negative and positive
+        return /^-?\d*(\.\d+)?$/.test(value);
     };
 
     const isDateValid = (dateString) => {
@@ -202,6 +205,7 @@ const StudentSummaryFormModal = ({
     };
 
     const validateFields = () => {
+        console.log(products[0]["PremiumPayoutMode"]);
         const productDecimalFields = [
             "WholeLife",
             "Endowment",
@@ -217,30 +221,49 @@ const StudentSummaryFormModal = ({
             "Yearly",
             "CurrentValue",
             "TotalPremiumsPaid",
+            "PremiumPayoutAmount",
         ];
 
-        products.forEach((product, i) => {
-            Object.keys(product).forEach((key) => {
+        const excludedFields = [
+            "OtherBenefitsRemarks",
+            "PremiumPayoutMode",
+            "PremiumPayoutYear",
+            "PremiumPayoutAmount",
+            ...productDecimalFields,
+        ];
+
+        for (let i = 0; i < products.length; i++) {
+            const product = products[i];
+            for (const key of Object.keys(product)) {
+                if (!excludedFields.includes(key) && !product[key]) {
+                    return `Product ${i + 1}: ${key
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^./, (str) =>
+                            str.toUpperCase()
+                        )} is required.`;
+                }
                 if (productDecimalFields.includes(key) && product[key] === "") {
                     product[key] = "0";
                 } else if (
                     productDecimalFields.includes(key) &&
                     !isDecimalValid(product[key].toString())
                 ) {
-                    return `Product ${i + 1}: ${key
+                    const msg = `Product ${i + 1}: ${key
                         .replace(/([A-Z])/g, " $1")
                         .replace(/^./, (str) =>
                             str.toUpperCase()
                         )} must be a valid decimal number.`;
+
+                    return msg;
                 }
-            });
+            }
 
             if (!isDateValid(product["Date"])) {
                 return `Product ${
                     i + 1
                 }: Date must be in the format YYYY-MM-DD.`;
             }
-        });
+        }
 
         // Validate Future Plan Fields
         const futurePlanDecimalFields = [
@@ -285,8 +308,22 @@ const StudentSummaryFormModal = ({
     };
 
     const handleProductChange = (event) => {
+        const { name, value } = event.target;
         const updatedProducts = [...products];
-        updatedProducts[currentPage][event.target.name] = event.target.value;
+
+        // If changing PremiumPayoutMode to "Yearly", reset PremiumPayoutYear
+        if (
+            name === "PremiumPayoutMode" &&
+            (value === "Yearly" || value === "")
+        ) {
+            updatedProducts[currentPage]["PremiumPayoutYear"] = "";
+            updatedProducts[currentPage]["PremiumPayoutAmount"] = 0;
+        }
+
+        // Update the changed field with the new value
+        updatedProducts[currentPage][name] = value;
+
+        // Apply the updates to the state
         setProducts(updatedProducts);
     };
 
@@ -332,30 +369,28 @@ const StudentSummaryFormModal = ({
     };
 
     const submitAll = async (e) => {
+        console.log(products);
         localStorage.setItem("agentData", JSON.stringify(agent[0]));
         e.preventDefault(); // Prevent default form submission
 
         const validationMessage = validateFields();
         if (validationMessage !== "") {
-            alert(validationMessage); // Alert the user to fill in the missing fields
-            return; // Prevent form submission
+            alert(validationMessage);
+            return;
         }
         setStage("loading");
         try {
-            // Handle products: update existing or add new ones
             const productPromises = products.map((product) =>
                 product.id
                     ? updateProduct(product.id, {
                           ...product,
                           unique_code: code,
-                      }) // Assumes product.id is available for existing products
+                      })
                     : addProduct({ ...product, unique_code: code })
             );
             await Promise.all(productPromises);
 
-            // Handle future plans: update existing or add new ones
             const futurePlanPromises = futurePlans.map((plan) => {
-                // Calculate Shortfall upfront for clarity
                 const shortfall =
                     plan.RecommendedSumAssured - plan.CurrentSumAssured;
                 const planData = {
@@ -364,14 +399,12 @@ const StudentSummaryFormModal = ({
                     Shortfall: shortfall,
                 };
 
-                // Determine if updating an existing plan or adding a new one
                 return plan.id
                     ? updateFuturePlan(plan.id, planData)
                     : addFuturePlan(planData);
             });
             await Promise.all(futurePlanPromises);
 
-            // Update the student summary if editing
             if (isUpdate && summary.id) {
                 await updateStudentSummary(summary.id, {
                     ...agent[0],
@@ -379,13 +412,9 @@ const StudentSummaryFormModal = ({
                 });
                 setUpdated(true);
             } else {
-                // Create the student summary if adding new
-
                 await addStudentSummary({
                     ...agent[0],
-                    // Assuming addStudentSummary doesn't need an id and creates a new entry.
                     unique_code: code,
-                    // Include other necessary fields for creating a student summary.
                     student: student.studentId,
                 });
             }
@@ -556,6 +585,138 @@ const StudentSummaryFormModal = ({
                                             showYearDropdown
                                             yearDropdownItemNumber={40}
                                             scrollableYearDropdown
+                                        />
+                                    </Form.Group>
+                                );
+                            }
+
+                            if (field === "Mode") {
+                                return (
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                        >
+                                            <option value="">
+                                                Select an option
+                                            </option>{" "}
+                                            <option value="CPF-OA(Single)">
+                                                CPF-OA(Single)
+                                            </option>
+                                            <option value="SRS(Single)">
+                                                SRS(Single)
+                                            </option>
+                                            <option value="Cash(Single)">
+                                                Cash(Single)
+                                            </option>
+                                            <option value="CPF-OA (Yearly)">
+                                                CPF-OA (Yearly)
+                                            </option>
+                                            <option value="Cash (Monthly)">
+                                                Cash (Monthly)
+                                            </option>
+                                            <option value="Cash (Yearly)">
+                                                Cash (Yearly)
+                                            </option>
+                                            <option value="CPF-MA (Yearly)">
+                                                CPF-MA (Yearly)
+                                            </option>
+                                        </Form.Control>
+                                    </Form.Group>
+                                );
+                            }
+
+                            // Handling for the PremiumPayoutMode field
+                            if (field === "PremiumPayoutMode") {
+                                return (
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                "NA"
+                                            }
+                                            onChange={handleProductChange}
+                                        >
+                                            <option value="NA">NA</option>
+                                            <option value="Yearly">
+                                                Yearly
+                                            </option>
+                                            <option value="Single">
+                                                Single
+                                            </option>
+                                        </Form.Control>
+                                    </Form.Group>
+                                );
+                            }
+
+                            if (field === "PremiumPayoutYear") {
+                                const isDisabled =
+                                    products[currentPage][
+                                        "PremiumPayoutMode"
+                                    ] !== "Single";
+                                return (
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                            disabled={isDisabled}
+                                        >
+                                            <option value="">
+                                                Select a year
+                                            </option>
+                                            {[...Array(30).keys()].map((i) => (
+                                                <option
+                                                    key={i}
+                                                    value={
+                                                        new Date().getFullYear() +
+                                                        i
+                                                    }
+                                                >
+                                                    {new Date().getFullYear() +
+                                                        i}
+                                                </option>
+                                            ))}
+                                        </Form.Control>
+                                    </Form.Group>
+                                );
+                            }
+
+                            if (field === "PremiumPayoutAmount") {
+                                const isDisabled =
+                                    products[currentPage][
+                                        "PremiumPayoutMode"
+                                    ] === null ||
+                                    products[currentPage][
+                                        "PremiumPayoutMode"
+                                    ] === "NA";
+                                console.log(isDisabled);
+                                return (
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                            disabled={isDisabled}
                                         />
                                     </Form.Group>
                                 );

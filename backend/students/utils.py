@@ -161,6 +161,8 @@ def generate_pdf(student_summary):
     # Bar Graph Page
     add_bar_graph_to_pdf(pdf, products)
 
+    # Line Graph Page
+
     # Pie Chart Page
     pdf.add_page()
     generate_pie_charts(pdf, pdf_dir, plans)
@@ -187,7 +189,9 @@ from reportlab.lib.units import mm
 from reportlab.lib.colors import white
 from reportlab.lib.enums import TA_CENTER
 
-
+def create_inflow_outflow_page(pdf, products):
+    # Add a portrait page
+    pdf.add_page()
 
 def generate_product_table(products):
     buffer = BytesIO()

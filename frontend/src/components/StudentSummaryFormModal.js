@@ -42,15 +42,14 @@ const emptyProductTemplate = {
     Accidental: "",
     OtherBenefitsRemarks: "",
     Mode: "",
-    Monthly: "",
-    Quarterly: "",
-    SemiAnnual: "",
-    Yearly: "",
+    SinglePaymentAmount: "",
+    YearlyPaymentAmount: "",
     MaturityPremiumEndDate: "",
     CurrentValue: "",
     TotalPremiumsPaid: "",
     PremiumPayoutMode: "",
     PremiumPayoutYear: "",
+    PremiumPayoutEndYear: "",
     PremiumPayoutAmount: "",
 };
 
@@ -60,6 +59,8 @@ const productFieldLimits = {
     Company: 100,
     Type: 100,
     Mode: 100,
+    SinglePaymentAmount: 10,
+    YearlyPaymentAmount: 10,
     MaturityPremiumEndDate: 100,
     WholeLife: 10,
     Endowment: 10,
@@ -69,12 +70,10 @@ const productFieldLimits = {
     TotalPermanentDisability: 10,
     EarlyCriticalIllness: 10,
     Accidental: 10,
-    Monthly: 10,
-    Quarterly: 10,
-    SemiAnnual: 10,
     Yearly: 10,
     CurrentValue: 10,
-    TotalPremiumsPaid: 10,
+    TotalPremiumsPaid: 11,
+    PremiumPayoutAmount: 11,
 };
 
 const emptyFuturePlanTemplate = {
@@ -91,6 +90,10 @@ const futurePlanTypes = [
     "Accidental Death & Disablement",
     "Monthly Disability",
 ];
+
+const singleModes = ["CPF-OA (Single)", "SRS (Single)", "Cash (Single)"];
+const yearlyModes = ["Cash (Yearly)", "Cash (Yearly)", "CPF-MA (Yearly)"];
+const modeOptions = ["", ...singleModes, ...yearlyModes];
 
 const StudentSummaryFormModal = ({
     student,
@@ -205,7 +208,6 @@ const StudentSummaryFormModal = ({
     };
 
     const validateFields = () => {
-        console.log(products[0]["PremiumPayoutMode"]);
         const productDecimalFields = [
             "WholeLife",
             "Endowment",
@@ -215,10 +217,8 @@ const StudentSummaryFormModal = ({
             "TotalPermanentDisability",
             "EarlyCriticalIllness",
             "Accidental",
-            "Monthly",
-            "Quarterly",
-            "SemiAnnual",
-            "Yearly",
+            "SinglePaymentAmount",
+            "YearlyPaymentAmount",
             "CurrentValue",
             "TotalPremiumsPaid",
             "PremiumPayoutAmount",
@@ -228,6 +228,7 @@ const StudentSummaryFormModal = ({
             "OtherBenefitsRemarks",
             "PremiumPayoutMode",
             "PremiumPayoutYear",
+            "PremiumPayoutEndYear",
             "PremiumPayoutAmount",
             ...productDecimalFields,
         ];
@@ -274,7 +275,7 @@ const StudentSummaryFormModal = ({
         for (let i = 0; i < futurePlans.length; i++) {
             futurePlanDecimalFields.forEach((field) => {
                 if (futurePlans[i][field] === "") {
-                    futurePlans[i][field] = "0"; // Set empty decimal fields to "0"
+                    futurePlans[i][field] = "0";
                 }
             });
 
@@ -312,12 +313,18 @@ const StudentSummaryFormModal = ({
         const updatedProducts = [...products];
 
         // If changing PremiumPayoutMode to "Yearly", reset PremiumPayoutYear
-        if (
-            name === "PremiumPayoutMode" &&
-            (value === "Yearly" || value === "")
-        ) {
+        if (name === "PremiumPayoutMode" && value === "NA") {
             updatedProducts[currentPage]["PremiumPayoutYear"] = "";
-            updatedProducts[currentPage]["PremiumPayoutAmount"] = 0;
+            updatedProducts[currentPage]["PremiumPayoutEndYear"] = "";
+            updatedProducts[currentPage]["PremiumPayoutAmount"] = "";
+        }
+
+        if (name === "Mode" && !singleModes.includes(value)) {
+            updatedProducts[currentPage]["SinglePaymentAmount"] = "";
+        }
+
+        if (name === "Mode" && !yearlyModes.includes(value)) {
+            updatedProducts[currentPage]["YearlyPaymentAmount"] = "";
         }
 
         // Update the changed field with the new value
@@ -369,7 +376,6 @@ const StudentSummaryFormModal = ({
     };
 
     const submitAll = async (e) => {
-        console.log(products);
         localStorage.setItem("agentData", JSON.stringify(agent[0]));
         e.preventDefault(); // Prevent default form submission
 
@@ -603,36 +609,84 @@ const StudentSummaryFormModal = ({
                                             }
                                             onChange={handleProductChange}
                                         >
-                                            <option value="">
-                                                Select an option
-                                            </option>{" "}
-                                            <option value="CPF-OA(Single)">
-                                                CPF-OA(Single)
-                                            </option>
-                                            <option value="SRS(Single)">
-                                                SRS(Single)
-                                            </option>
-                                            <option value="Cash(Single)">
-                                                Cash(Single)
-                                            </option>
-                                            <option value="CPF-OA (Yearly)">
-                                                CPF-OA (Yearly)
-                                            </option>
-                                            <option value="Cash (Monthly)">
-                                                Cash (Monthly)
-                                            </option>
-                                            <option value="Cash (Yearly)">
-                                                Cash (Yearly)
-                                            </option>
-                                            <option value="CPF-MA (Yearly)">
-                                                CPF-MA (Yearly)
-                                            </option>
+                                            {modeOptions.map(
+                                                (optionValue, index) => {
+                                                    const label =
+                                                        optionValue === ""
+                                                            ? "Select an option"
+                                                            : optionValue;
+                                                    return (
+                                                        <option
+                                                            key={index}
+                                                            value={optionValue}
+                                                        >
+                                                            {label}
+                                                        </option>
+                                                    );
+                                                }
+                                            )}
                                         </Form.Control>
                                     </Form.Group>
                                 );
                             }
 
-                            // Handling for the PremiumPayoutMode field
+                            if (field === "SinglePaymentAmount") {
+                                const isSinglePaymentEnabled =
+                                    singleModes.includes(
+                                        products[currentPage]["Mode"]
+                                    );
+                                return (
+                                    <Form.Group
+                                        key="SinglePaymentAmount"
+                                        className="mb-3"
+                                    >
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            name="SinglePaymentAmount"
+                                            value={
+                                                products[currentPage][
+                                                    "SinglePaymentAmount"
+                                                ] || ""
+                                            }
+                                            onChange={handleProductChange}
+                                            disabled={!isSinglePaymentEnabled}
+                                            maxLength={
+                                                productFieldLimits[field]
+                                            }
+                                        />
+                                    </Form.Group>
+                                );
+                            }
+
+                            if (field === "YearlyPaymentAmount") {
+                                const isYearlyPaymentEnabled =
+                                    yearlyModes.includes(
+                                        products[currentPage]["Mode"]
+                                    );
+                                return (
+                                    <Form.Group
+                                        key="YearlyPaymentAmount"
+                                        className="mb-3"
+                                    >
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            name="YearlyPaymentAmount"
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                            disabled={!isYearlyPaymentEnabled}
+                                            maxLength={
+                                                productFieldLimits[field]
+                                            }
+                                        />
+                                    </Form.Group>
+                                );
+                            }
+
                             if (field === "PremiumPayoutMode") {
                                 return (
                                     <Form.Group key={field} className="mb-3">
@@ -659,13 +713,34 @@ const StudentSummaryFormModal = ({
                             }
 
                             if (field === "PremiumPayoutYear") {
+                                console.log(
+                                    products[currentPage]["PremiumPayoutMode"]
+                                );
+                                const currentYear = new Date().getFullYear();
+                                const startYear = currentYear - 50;
+                                const endYear = currentYear + 25;
+
                                 const isDisabled =
                                     products[currentPage][
                                         "PremiumPayoutMode"
-                                    ] !== "Single";
+                                    ] !== "Single" &&
+                                    products[currentPage][
+                                        "PremiumPayoutMode"
+                                    ] !== "Yearly";
                                 return (
                                     <Form.Group key={field} className="mb-3">
-                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Label>
+                                            {products[currentPage][
+                                                "PremiumPayoutMode"
+                                            ] === "Single"
+                                                ? "Single Payout Year"
+                                                : products[currentPage][
+                                                      "PremiumPayoutMode"
+                                                  ] === "Yearly"
+                                                ? "Payout Starting Year"
+                                                : "Payout Year"}
+                                        </Form.Label>
+
                                         <Form.Control
                                             as="select"
                                             name={field}
@@ -679,16 +754,16 @@ const StudentSummaryFormModal = ({
                                             <option value="">
                                                 Select a year
                                             </option>
-                                            {[...Array(30).keys()].map((i) => (
+                                            {[
+                                                ...Array(
+                                                    endYear - startYear + 1
+                                                ).keys(),
+                                            ].map((i) => (
                                                 <option
                                                     key={i}
-                                                    value={
-                                                        new Date().getFullYear() +
-                                                        i
-                                                    }
+                                                    value={startYear + i}
                                                 >
-                                                    {new Date().getFullYear() +
-                                                        i}
+                                                    {startYear + i}
                                                 </option>
                                             ))}
                                         </Form.Control>
@@ -696,6 +771,48 @@ const StudentSummaryFormModal = ({
                                 );
                             }
 
+                            if (field === "PremiumPayoutEndYear") {
+                                const currentYear = new Date().getFullYear();
+                                const startYear = currentYear - 5;
+                                const endYear = currentYear + 100;
+
+                                const isDisabled =
+                                    products[currentPage][
+                                        "PremiumPayoutMode"
+                                    ] !== "Yearly";
+                                return (
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>{label}</Form.Label>
+
+                                        <Form.Control
+                                            as="select"
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                            disabled={isDisabled}
+                                        >
+                                            <option value="">
+                                                Select a year
+                                            </option>
+                                            {[
+                                                ...Array(
+                                                    endYear - startYear + 1
+                                                ).keys(),
+                                            ].map((i) => (
+                                                <option
+                                                    key={i}
+                                                    value={startYear + i}
+                                                >
+                                                    {startYear + i}
+                                                </option>
+                                            ))}
+                                        </Form.Control>
+                                    </Form.Group>
+                                );
+                            }
                             if (field === "PremiumPayoutAmount") {
                                 const isDisabled =
                                     products[currentPage][
@@ -704,7 +821,7 @@ const StudentSummaryFormModal = ({
                                     products[currentPage][
                                         "PremiumPayoutMode"
                                     ] === "NA";
-                                console.log(isDisabled);
+
                                 return (
                                     <Form.Group key={field} className="mb-3">
                                         <Form.Label>{label}</Form.Label>
@@ -835,6 +952,7 @@ const StudentSummaryFormModal = ({
                                             ""
                                         }
                                         onChange={handleFuturePlanChange}
+                                        maxLength={13}
                                     />
                                 </Form.Group>
                             );

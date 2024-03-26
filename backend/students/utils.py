@@ -286,7 +286,7 @@ def create_line_graphs(products, dob, pdf):
     
     # Add images to the PDF. Adjust x, y, w, h as needed.
     pdf.image(payment_image, x=10, y=20, w=180)  # Place the first image near the top
-    pdf.image(premium_image, x=10, y=140, w=180)  # Place the second image lower, adjust 'y' as needed
+    pdf.image(premium_image, x=10, y=155, w=180)  # Place the second image lower, adjust 'y' as needed
     os.remove(payment_image)
     os.remove(premium_image)
 

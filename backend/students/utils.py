@@ -47,7 +47,9 @@ def insert_products_between_pages(initial_pdf_buffer, products_pdf_buffer):
     # Add the remaining pages from the initial PDF
     for page in initial_pdf.pages[1:]:
         pdf_writer.add_page(page)
-
+    disclaimer_pdf = PdfReader('Disclaimer.pdf') 
+    for page in disclaimer_pdf.pages:
+        pdf_writer.add_page(page)
     # Output to a new BytesIO buffer
     output_pdf_buffer = BytesIO()
     pdf_writer.write(output_pdf_buffer)
@@ -285,6 +287,9 @@ def create_line_graphs(products, dob, pdf):
     # Add images to the PDF. Adjust x, y, w, h as needed.
     pdf.image(payment_image, x=10, y=20, w=180)  # Place the first image near the top
     pdf.image(premium_image, x=10, y=140, w=180)  # Place the second image lower, adjust 'y' as needed
+    os.remove(payment_image)
+    os.remove(premium_image)
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
     header_path = os.path.join(script_dir, "img", "CPPHeader.png")
     pdf.image(header_path, x = 0, y = 0, w = 210)

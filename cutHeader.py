@@ -25,6 +25,6 @@ def cut_top_of_image(image_path, output_path, inches=1.7, dpi=72):
         top_image.save(output_path)
 
 # Example usage
-image_path = 'CP.png'
-output_path = 'CPHeader.png'
+image_path = 'CPP.png'
+output_path = 'CPPHeader.png'
 cut_top_of_image(image_path, output_path)

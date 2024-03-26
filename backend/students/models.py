@@ -50,6 +50,7 @@ class Product(models.Model):
     Mode = models.CharField(max_length=100)
     SinglePaymentAmount = models.DecimalField(max_digits=14, decimal_places=2)
     YearlyPaymentAmount = models.DecimalField(max_digits=14, decimal_places=2)
+    PaymentEndDate = models.DateField(blank = True, null = True)
     MaturityPremiumEndDate = models.CharField(max_length=100)
     CurrentValue = models.DecimalField(max_digits=14, decimal_places=2)
     TotalPremiumsPaid = models.DecimalField(max_digits=14, decimal_places=2)

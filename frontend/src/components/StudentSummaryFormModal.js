@@ -44,6 +44,7 @@ const emptyProductTemplate = {
     Mode: "",
     SinglePaymentAmount: "",
     YearlyPaymentAmount: "",
+    PaymentEndDate: "",
     MaturityPremiumEndDate: "",
     CurrentValue: "",
     TotalPremiumsPaid: "",
@@ -92,7 +93,12 @@ const futurePlanTypes = [
 ];
 
 const singleModes = ["CPF-OA (Single)", "SRS (Single)", "Cash (Single)"];
-const yearlyModes = ["Cash (Yearly)", "Cash (Yearly)", "CPF-MA (Yearly)"];
+const yearlyModes = [
+    "Cash (Yearly)",
+    "Cash (Monthly)",
+    "Cash (Yearly)",
+    "CPF-MA (Yearly)",
+];
 const modeOptions = ["", ...singleModes, ...yearlyModes];
 
 const StudentSummaryFormModal = ({
@@ -669,7 +675,9 @@ const StudentSummaryFormModal = ({
                                         key="YearlyPaymentAmount"
                                         className="mb-3"
                                     >
-                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Label>
+                                            Monthly / Yearly Payment Amount
+                                        </Form.Label>
                                         <Form.Control
                                             type="text"
                                             name="YearlyPaymentAmount"
@@ -684,6 +692,53 @@ const StudentSummaryFormModal = ({
                                             }
                                         />
                                     </Form.Group>
+                                );
+                            }
+
+                            if (field === "PaymentEndDate") {
+                                const isYearlyPaymentEnabled =
+                                    yearlyModes.includes(
+                                        products[currentPage]["Mode"]
+                                    );
+                                return (
+                                    isYearlyPaymentEnabled && (
+                                        <Form.Group
+                                            key={field}
+                                            className="mb-3"
+                                        >
+                                            <Form.Label>{label}</Form.Label>
+                                            <ReactDatePicker
+                                                selected={
+                                                    products[currentPage][field]
+                                                        ? new Date(
+                                                              products[
+                                                                  currentPage
+                                                              ][field]
+                                                          )
+                                                        : null
+                                                }
+                                                onChange={(date) => {
+                                                    const newProducts = [
+                                                        ...products,
+                                                    ];
+                                                    newProducts[currentPage][
+                                                        field
+                                                    ] = date
+                                                        ? date
+                                                              .toISOString()
+                                                              .split("T")[0]
+                                                        : "";
+                                                    setProducts(newProducts);
+                                                }}
+                                                dateFormat="yyyy-MM-dd"
+                                                className="form-control custom-datepicker"
+                                                placeholderText="Select date"
+                                                showYearDropdown
+                                                yearDropdownItemNumber={40}
+                                                scrollableYearDropdown
+                                            />
+                                        </Form.Group>
+                                    )
                                 );
                             }
 

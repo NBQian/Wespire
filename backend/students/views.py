@@ -32,7 +32,7 @@ class StudentSummaryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         student_summary = serializer.save(date_created=timezone.now())
-        pdf_file = generate_pdf(student_summary)
+        pdf_file = generate_pdf(student_summary, student_summary.student.DateOfBirth)
 
         student_summary.pdf_file.save(pdf_file.name, pdf_file, save=True)
 
@@ -44,7 +44,7 @@ class StudentSummaryViewSet(viewsets.ModelViewSet):
             updated_summary.pdf_file.delete(save=False)
 
         # Generate a new PDF
-        pdf_file = generate_pdf(updated_summary)
+        pdf_file = generate_pdf(updated_summary, updated_summary.student.DateOfBirth)
         updated_summary.pdf_file.save(pdf_file.name, pdf_file, save = True)
 
 class ProductViewSet(viewsets.ModelViewSet):

@@ -2,8 +2,8 @@ import tempfile
 import pypdf
 from pypdf import PdfReader, PdfWriter
 import re
-import datetime
-import time
+from datetime import datetime, date
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
@@ -107,7 +107,7 @@ def queryset_to_list_of_dicts(queryset):
             field_value = getattr(product, field_name)
 
             # Special handling for date and datetime fields to format them as strings
-            if isinstance(field_value, (datetime.date, datetime.datetime)):
+            if isinstance(field_value, (date, datetime)):
                 product_dict[field_name] = field_value.strftime('%Y-%m-%d')
             else:
                 product_dict[field_name] = field_value
@@ -115,7 +115,7 @@ def queryset_to_list_of_dicts(queryset):
         list_of_dicts.append(product_dict)
     return list_of_dicts
 
-def generate_pdf(student_summary):
+def generate_pdf(student_summary, dob):
     print(student_summary)
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
 
@@ -162,7 +162,8 @@ def generate_pdf(student_summary):
     add_bar_graph_to_pdf(pdf, products)
 
     # Line Graph Page
-
+    pdf.add_page()
+    create_line_graphs(products, dob, pdf)
     # Pie Chart Page
     pdf.add_page()
     generate_pie_charts(pdf, pdf_dir, plans)
@@ -179,6 +180,115 @@ def generate_pdf(student_summary):
 
     # Return the ContentFile, no need to manually save it to S3 or generate a URL here
     return pdf_file
+
+from datetime import datetime
+def create_line_graphs(products, dob, pdf):
+    print(products)
+    start_age = 20
+    end_age = 100
+    def calculate_annual_payments(start_age, end_age):
+        annual_payments = {age: 0 for age in range(start_age, end_age + 1)}
+
+        for product in products:
+            start_date = datetime.strptime(product['Date'], '%Y-%m-%d').date()
+            end_date = datetime.strptime(product['PaymentEndDate'], '%Y-%m-%d').date()
+            mode = product['Mode']
+            single_payment_amount = float(product['SinglePaymentAmount'])
+            yearly_payment_amount = float(product['YearlyPaymentAmount']) if mode != "Single" else 0
+
+            if "Single" in mode:
+                payment_year = start_date.year
+                age_at_payment = payment_year - dob.year
+                if start_age <= age_at_payment <= end_age:
+                    annual_payments[age_at_payment] += single_payment_amount
+            else:
+                for year in range(start_date.year, end_date.year + 1):
+                    age_at_year = year - dob.year
+                    if start_age <= age_at_year <= end_age:
+                        if "Monthly" in mode:
+                            annual_payments[age_at_year] += yearly_payment_amount * 12
+                        elif "Yearly" in mode:
+                            annual_payments[age_at_year] += yearly_payment_amount
+        return annual_payments
+
+
+    annual_payments = calculate_annual_payments(start_age, end_age)
+
+    df_annual_payments = pd.DataFrame(list(annual_payments.items()), columns=['Age', 'Annual Payment'])
+    ax = df_annual_payments.plot(kind='line', x='Age', y='Annual Payment', marker='o', linestyle='-', color='#293486', markersize=3.5, figsize=(10, 6))  # Adjust markersize as needed
+
+    # Customizing the plot
+    ax.set_xlabel("Age", fontsize=14, labelpad=20)
+    ax.set_ylabel("Annual Payment (S$)", fontsize=14, labelpad=20)
+    plt.xticks(range(start_age, end_age + 1, 10))
+    plt.legend(['Annual Payment'], fontsize=12)
+
+    # Adjusting tick parameters as per the new requirements
+    ax.tick_params(axis='x', labelsize=13, pad=13)
+    ax.tick_params(axis='y', labelsize=12, pad=13)
+
+    # Setting the title with custom font size, font name, font weight, and padding
+    ax.set_title('Annual Payment Outflow', fontsize=20, fontname='Arial', fontweight='bold', pad=25)
+
+    # Remove grid
+    ax.grid(False)
+
+    # Remove top and right border lines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Before showing the plot, save it to a file
+    plt.savefig('payment.png', dpi=300, bbox_inches='tight')
+
+    def calculate_premium_payouts(start_age, end_age):
+        premium_payouts = {age: 0 for age in range(start_age, end_age + 1)}
+        for product in products:
+            if product['PremiumPayoutMode'] == 'Single':
+                payout_year = int(product['PremiumPayoutEndYear'])
+                payout_age = payout_year - dob.year
+                if start_age <= payout_age <= end_age:
+                    premium_payouts[payout_age] += float(product['PremiumPayoutAmount'])
+            elif product['PremiumPayoutMode'] == 'Yearly':
+                start_year = int(product['PremiumPayoutYear'])
+                end_year = int(product['PremiumPayoutEndYear'])
+                for year in range(start_year, end_year + 1):
+                    age = year - dob.year
+                    if start_age <= age <= end_age:
+                        premium_payouts[age] += float(product['PremiumPayoutAmount'])
+        return premium_payouts
+
+    # Calculate premium payouts
+    premium_payouts = calculate_premium_payouts(20, 100)
+
+    # Convert to DataFrame
+    df_premium_payouts = pd.DataFrame(list(premium_payouts.items()), columns=['Age', 'Premium Payout'])
+
+    # Plot
+    ax = df_premium_payouts.plot(kind='line', x='Age', y='Premium Payout', color='#293486', marker='o', linestyle='-', markersize=3.5, figsize=(10, 6))
+    ax.set_xlabel("Age", fontsize=14, labelpad=20)
+    ax.set_ylabel("Premium Payout (S$)", fontsize=14, labelpad=20)
+    plt.xticks(range(20, 101, 10))
+    ax.tick_params(axis='x', labelsize=13, pad=13)
+    ax.tick_params(axis='y', labelsize=12, pad=10)
+    ax.set_title('Premium Payout Flow', fontsize=20, fontname='Arial', fontweight='bold', pad=25)
+    ax.grid(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    plt.legend(['Premium Payout'])
+
+    # Save the graph as a PNG image
+    plt.savefig('premium.png', dpi=300, bbox_inches='tight')
+
+    payment_image = 'payment.png'
+    premium_image = 'premium.png'
+    
+    # Add images to the PDF. Adjust x, y, w, h as needed.
+    pdf.image(payment_image, x=10, y=20, w=180)  # Place the first image near the top
+    pdf.image(premium_image, x=10, y=140, w=180)  # Place the second image lower, adjust 'y' as needed
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    header_path = os.path.join(script_dir, "img", "CPPHeader.png")
+    pdf.image(header_path, x = 0, y = 0, w = 210)
+
 
 
 from reportlab.lib import colors
@@ -201,7 +311,7 @@ def generate_product_table(products):
     "OtherBenefitsRemarks": "Remarks",
     "MaturityPremiumEndDate": "Maturity Date"
     }
-    excluded_fields = ['unique_code', 'id', 'Type', "PremiumPayoutMode", "PremiumPayoutYear", "PremiumPayoutAmount"]
+    excluded_fields = ['unique_code', 'id', 'Type', "PremiumPayoutMode", "PremiumPayoutYear", "PremiumPayoutAmount", "PaymentEndDate"]
     filtered_fields = [field for field in list(products[0].keys()) if field not in excluded_fields]
 
     first_half_fields = filtered_fields[:12]
@@ -242,7 +352,6 @@ def generate_product_table(products):
     
     # Create the document with custom canvas method
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
-    title_row_height = 100
     light_grey = colors.Color(0.784, 0.784, 0.784)
 
     def get_table_style():
@@ -254,6 +363,10 @@ def generate_product_table(products):
             ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#293486")),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('TOPPADDING', (0, 0), (-1, 0), 14),  # Adds top padding to the title cells
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 14), 
+            ('LEFTPADDING', (0, 0), (-1, 0), 8), 
+            ('RIGHTPADDING', (0, 0), (-1, 0), 8), 
         ] + [
             ('BACKGROUND', (0, i), (-1, i), colors.white if i % 2 == 1 else colors.HexColor("#e6e6e6"))
             for i in range(1, max(len(first_half_data), len(second_half_data)) + 1)

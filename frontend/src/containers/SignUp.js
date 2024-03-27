@@ -129,8 +129,9 @@ const Signup = ({ signup, isAuthenticated }) => {
                                     size="sm"
                                     role="status"
                                     aria-hidden="true"
+                                    style={{ marginRight: "10px" }}
                                 />
-                                <span className="ml-2">Loading...</span>
+                                <span>Loading...</span>
                             </>
                         ) : (
                             "Register"

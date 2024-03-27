@@ -79,7 +79,7 @@ const ResetPassword = ({ reset_password }) => {
                                     aria-hidden="true"
                                     style={{ marginRight: "10px" }}
                                 />
-                                <span> Loading...</span>
+                                <span>Loading...</span>
                             </>
                         ) : (
                             "Reset Password"

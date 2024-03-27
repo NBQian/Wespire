@@ -16,6 +16,7 @@ const Signup = ({ signup, isAuthenticated }) => {
     }, []);
 
     const [accountCreated, setAccountCreated] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -38,6 +39,16 @@ const Signup = ({ signup, isAuthenticated }) => {
             setLoading(false); // Stop loading after signup is complete
             setAccountCreated(true);
         }
+        // Check if the password length is at least 8 characters
+        if (password.length < 8 || re_password.length < 8) {
+            setPasswordError("Passwords must be at least 8 characters long.");
+            return;
+        }
+
+        if (password !== re_password) {
+            setPasswordError("The passwords do not match.");
+            return;
+        }
     };
 
     if (isAuthenticated) {
@@ -52,6 +63,20 @@ const Signup = ({ signup, isAuthenticated }) => {
             <div className="signup-form">
                 <img src={logo} alt="logo" className="login-logo" />
                 <p>Create your Account</p>
+                {passwordError && (
+                    <div
+                        className="alert alert-danger text-center"
+                        role="alert"
+                    >
+                        {passwordError}
+                        <div
+                            style={{
+                                textAlign: "right",
+                                marginTop: "10px",
+                            }}
+                        ></div>
+                    </div>
+                )}
                 <form onSubmit={onSubmit}>
                     <div className="form-group">
                         <input

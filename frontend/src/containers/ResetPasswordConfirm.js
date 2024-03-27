@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { connect } from "react-redux";
 import { reset_password_confirm } from "../actions/auth";
+import Spinner from "react-bootstrap/Spinner"; // Import Spinner
 
 const ResetPasswordConfirm = ({ reset_password_confirm }) => {
     const [requestSent, setRequestSent] = useState(false);
@@ -10,6 +11,7 @@ const ResetPasswordConfirm = ({ reset_password_confirm }) => {
         new_password: "",
         re_new_password: "",
     });
+    const [loading, setLoading] = useState(false);
 
     const { new_password, re_new_password } = formData;
     const { uid, token } = useParams();
@@ -19,17 +21,29 @@ const ResetPasswordConfirm = ({ reset_password_confirm }) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const onSubmit = (e) => {
+    const onSubmit = async (e) => {
         e.preventDefault();
-
+        if (new_password === re_new_password && new_password.length >= 8) {
+            setLoading(true); // Start loading
+            await reset_password_confirm(
+                uid,
+                token,
+                new_password,
+                re_new_password
+            );
+            setLoading(false); // Stop loading after signup is complete
+            setRequestSent(true);
+        }
         // Check if the password length is at least 8 characters
         if (new_password.length < 8 || re_new_password.length < 8) {
             setPasswordError("Passwords must be at least 8 characters long.");
             return;
         }
 
-        reset_password_confirm(uid, token, new_password, re_new_password);
-        setRequestSent(true);
+        if (new_password !== re_new_password) {
+            setPasswordError("The passwords do not match.");
+            return;
+        }
     };
 
     if (requestSent) {
@@ -67,8 +81,21 @@ const ResetPasswordConfirm = ({ reset_password_confirm }) => {
                         required
                     />
                 </div>
-                <button className="btn btn-primary" type="submit">
-                    Reset Password
+                <button type="submit" disabled={loading}>
+                    {loading ? (
+                        <>
+                            <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                            />
+                            <span className="ml-2">Loading...</span>
+                        </>
+                    ) : (
+                        "Reset Password"
+                    )}
                 </button>
             </form>
         </div>

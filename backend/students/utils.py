@@ -246,7 +246,7 @@ def create_line_graphs(products, dob, pdf):
         premium_payouts = {age: 0 for age in range(start_age, end_age + 1)}
         for product in products:
             if product['PremiumPayoutMode'] == 'Single':
-                payout_year = int(product['PremiumPayoutEndYear'])
+                payout_year = int(product['PremiumPayoutYear'])
                 payout_age = payout_year - dob.year
                 if start_age <= payout_age <= end_age:
                     premium_payouts[payout_age] += float(product['PremiumPayoutAmount'])
@@ -314,18 +314,19 @@ def generate_product_table(products):
     "TotalPermanentDisability": "TPD SA",
     "TotalDeathCoverage": "Death SA",
     "OtherBenefitsRemarks": "Remarks",
-    "MaturityPremiumEndDate": "Maturity Date"
+    "MaturityPremiumEndDate": "Maturity Date",
+    "TotalPremiumsPaid": "Paid Total"
     }
     excluded_fields = ['unique_code', 'id', 'Type', "PremiumPayoutMode", "PremiumPayoutYear", "PremiumPayoutAmount", "PaymentEndDate"]
     filtered_fields = [field for field in list(products[0].keys()) if field not in excluded_fields]
 
-    first_half_fields = filtered_fields[:12]
-    second_half_fields = filtered_fields[12:]
+    first_half_fields = filtered_fields[:11]
+    second_half_fields = filtered_fields[11:]
 
     stylesheet = getSampleStyleSheet()
     normal_style = stylesheet['Normal']
 
-    title_style = ParagraphStyle('Title', parent=normal_style, fontSize=10, leading=12, spaceBefore=6, spaceAfter=6, textColor=white, alignment=TA_CENTER)
+    title_style = ParagraphStyle('Title', parent=normal_style, fontSize=10, leading=12, spaceBefore=6, spaceAfter=6, textColor=white, alignment=TA_CENTER, wordWrap='LTR')
 
     # Process headers to use Paragraph for increased height
     def process_headers(headers):
@@ -335,15 +336,16 @@ def generate_product_table(products):
     first_half_headers = process_headers(["No."] + [custom_headers.get(field, camel_case_to_words(field)) for field in first_half_fields])
     second_half_headers = process_headers(["No."] + [custom_headers.get(field, camel_case_to_words(field)) for field in second_half_fields])
 
-    remarks_style = ParagraphStyle('remarks_style', parent=normal_style, fontSize=8, spaceBefore=0, spaceAfter=0, leftIndent=0, rightIndent=0, firstLineIndent=0, leading=9, wordWrap='CJK')
+    remarks_style = ParagraphStyle('remarks_style', parent=normal_style, fontSize=8, spaceBefore=0, spaceAfter=0, leftIndent=0, rightIndent=0, firstLineIndent=0, leading=9, wordWrap='WORD')
 
     # Process second table data to use Paragraph for "OtherBenefitsRemarks"
-    def process_second_table_data(products, fields):
+    remark_fields = ['OtherBenefitsRemarks', 'MaturityPremiumEndDate', "Company", "ProductName"]
+    def process_table_data(products, fields):
         processed_data = []
         for i, product in enumerate(products):
             row = [i+1]  # Adding row number
             for field in fields:
-                if field == 'OtherBenefitsRemarks':
+                if field in remark_fields:
                     text = product.get(field, "")
                     row.append(Paragraph(text, remarks_style))
                 else:
@@ -351,8 +353,8 @@ def generate_product_table(products):
             processed_data.append(row)
         return processed_data
 
-    first_half_data = [[i+1] + [product[field] for field in first_half_fields] for i, product in enumerate(products)]
-    second_half_data = process_second_table_data(products, second_half_fields)
+    first_half_data = process_table_data(products, first_half_fields)
+    second_half_data = process_table_data(products, second_half_fields)
 
     
     # Create the document with custom canvas method
@@ -370,17 +372,18 @@ def generate_product_table(products):
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('TOPPADDING', (0, 0), (-1, 0), 14),  # Adds top padding to the title cells
             ('BOTTOMPADDING', (0, 0), (-1, 0), 14), 
-            ('LEFTPADDING', (0, 0), (-1, 0), 8), 
-            ('RIGHTPADDING', (0, 0), (-1, 0), 8), 
+            # ('LEFTPADDING', (0, 0), (-1, 0), 8), 
+            # ('RIGHTPADDING', (0, 0), (-1, 0), 8), 
         ] + [
             ('BACKGROUND', (0, i), (-1, i), colors.white if i % 2 == 1 else colors.HexColor("#e6e6e6"))
             for i in range(1, max(len(first_half_data), len(second_half_data)) + 1)
         ])
     table_style = get_table_style()
     # Specify column widths for the second table, fixed width for "OtherBenefitsRemarks"
-    col_widths_second_half = [None] + [45 * mm] + [None] * (len(second_half_headers) - 2)
+    col_widths_first_half = [None]  + [28 * mm] + [None] * (len(first_half_headers) - 2)
+    col_widths_second_half = [None] * 3 + [45 * mm] + [None] * (len(second_half_headers) - 4)
 
-    first_table = Table([first_half_headers] + first_half_data)
+    first_table = Table([first_half_headers] + first_half_data, colWidths=col_widths_first_half)
     second_table = Table([second_half_headers] + second_half_data, colWidths=col_widths_second_half)
 
     first_table.setStyle(table_style)

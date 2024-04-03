@@ -5,6 +5,7 @@ import {
     addProduct,
     updateProduct,
     getProductsByUniqueCode,
+    deleteProduct,
 } from "../services/ProductServices";
 import {
     addFuturePlan,
@@ -30,8 +31,7 @@ const emptyProductTemplate = {
     Company: "",
     ProductNumber: "",
     ProductName: "",
-    Date: "",
-    Type: "",
+    Date: null,
     WholeLife: "",
     Endowment: "",
     Term: "",
@@ -39,12 +39,13 @@ const emptyProductTemplate = {
     TotalDeathCoverage: "",
     TotalPermanentDisability: "",
     EarlyCriticalIllness: "",
+    CriticalIllness: "",
     Accidental: "",
     OtherBenefitsRemarks: "",
     Mode: "",
     SinglePaymentAmount: "",
     YearlyPaymentAmount: "",
-    PaymentEndDate: "",
+    PaymentEndDate: null,
     MaturityPremiumEndDate: "",
     CurrentValue: "",
     TotalPremiumsPaid: "",
@@ -222,6 +223,7 @@ const StudentSummaryFormModal = ({
             "TotalDeathCoverage",
             "TotalPermanentDisability",
             "EarlyCriticalIllness",
+            "CriticalIllness",
             "Accidental",
             "SinglePaymentAmount",
             "YearlyPaymentAmount",
@@ -231,11 +233,17 @@ const StudentSummaryFormModal = ({
         ];
 
         const excludedFields = [
+            "Company",
+            "ProductNumber",
+            "ProductName",
+            "Date",
             "OtherBenefitsRemarks",
             "PremiumPayoutMode",
             "PremiumPayoutYear",
             "PremiumPayoutEndYear",
             "PremiumPayoutAmount",
+            "PaymentEndDate",
+            "MaturityPremiumEndDate",
             ...productDecimalFields,
         ];
 
@@ -249,6 +257,7 @@ const StudentSummaryFormModal = ({
                             str.toUpperCase()
                         )} is required.`;
                 }
+
                 if (productDecimalFields.includes(key) && product[key] === "") {
                     product[key] = "0";
                 } else if (
@@ -264,11 +273,27 @@ const StudentSummaryFormModal = ({
                     return msg;
                 }
             }
-
+            if (product["Date"] === "" && i == 0) {
+                return `Product ${
+                    i + 1
+                }: Date must be in the format YYYY-MM-DD.`;
+            } else if (product["Date"] === "") {
+                product["Date"] = products[i - 1]["Date"];
+            }
             if (!isDateValid(product["Date"])) {
                 return `Product ${
                     i + 1
                 }: Date must be in the format YYYY-MM-DD.`;
+            }
+            if (!isDateValid(product["PaymentEndDate"])) {
+                return `Product ${
+                    i + 1
+                }: Payment End Date must be in the format YYYY-MM-DD.`;
+            }
+            if (!isDateValid(product["Date"])) {
+                return `Product ${
+                    i + 1
+                }: Premium Payout End Year must be in the format YYYY-MM-DD.`;
             }
         }
 
@@ -360,6 +385,10 @@ const StudentSummaryFormModal = ({
     };
 
     const removeCurrentProduct = () => {
+        const product = products[currentPage];
+        if (product.id) {
+            deleteProduct(product.id);
+        }
         const updatedProducts = products.filter(
             (_, index) => index !== currentPage
         );
@@ -391,6 +420,7 @@ const StudentSummaryFormModal = ({
             return;
         }
         setStage("loading");
+
         try {
             const productPromises = products.map((product) =>
                 product.id

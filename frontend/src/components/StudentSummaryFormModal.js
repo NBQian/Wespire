@@ -199,6 +199,9 @@ const StudentSummaryFormModal = ({
 
     const isDateValid = (dateString) => {
         // Check if date matches "YYYY-MM-DD" format
+        if (dateString === null) {
+            return true;
+        }
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
             return false;
         }
@@ -273,13 +276,21 @@ const StudentSummaryFormModal = ({
                     return msg;
                 }
             }
-            if (product["Date"] === "" && i == 0) {
+            if (
+                (product["Date"] === null || product["Date"] === "") &&
+                i == 0
+            ) {
                 return `Product ${
                     i + 1
                 }: Date must be in the format YYYY-MM-DD.`;
-            } else if (product["Date"] === "") {
+            } else if (product["Date"] === "" || product["Date"] === null) {
                 product["Date"] = products[i - 1]["Date"];
             }
+
+            if (product["PaymentEndDate"] === "") {
+                product["PaymentEndDate"] = null;
+            }
+
             if (!isDateValid(product["Date"])) {
                 return `Product ${
                     i + 1

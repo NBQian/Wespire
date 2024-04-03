@@ -118,7 +118,6 @@ def queryset_to_list_of_dicts(queryset):
     return list_of_dicts
 
 def generate_pdf(student_summary, dob):
-    print(student_summary)
     filename = f"client_{student_summary.student.FirstName}_{student_summary.student.LastName}_{student_summary.date_created}.pdf"
 
     pdf_dir = os.path.join(settings.MEDIA_ROOT, 'client_summaries')
@@ -193,10 +192,13 @@ def create_line_graphs(products, dob, pdf):
 
         for product in products:
             start_date = datetime.strptime(product['Date'], '%Y-%m-%d').date()
-            end_date = datetime.strptime(product['PaymentEndDate'], '%Y-%m-%d').date()
+            end_date = None
+            if product['PaymentEndDate']:
+                end_date = datetime.strptime(product['PaymentEndDate'], '%Y-%m-%d').date()
+            
             mode = product['Mode']
             single_payment_amount = float(product['SinglePaymentAmount'])
-            yearly_payment_amount = float(product['YearlyPaymentAmount']) if mode != "Single" else 0
+            yearly_payment_amount = float(product['YearlyPaymentAmount'])
 
             if "Single" in mode:
                 payment_year = start_date.year

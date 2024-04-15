@@ -313,17 +313,17 @@ def create_inflow_outflow_page(pdf, products):
 def generate_product_table(products):
     buffer = BytesIO()
     custom_headers = {
+    "BasicSum": "Basic Sum Assured (Death)",
     "TotalPermanentDisability": "TPD SA",
-    "TotalDeathCoverage": "Death SA",
     "OtherBenefitsRemarks": "Remarks",
     "MaturityPremiumEndDate": "Maturity Date",
     "TotalPremiumsPaid": "Paid Total"
     }
-    excluded_fields = ['unique_code', 'id', 'Type', "PremiumPayoutMode", "PremiumPayoutYear", "PremiumPayoutAmount", "PaymentEndDate"]
+    excluded_fields = ['unique_code', 'id', "PremiumPayoutMode", "PremiumPayoutYear", "PremiumPayoutAmount", "PaymentEndDate"]
     filtered_fields = [field for field in list(products[0].keys()) if field not in excluded_fields]
 
-    first_half_fields = filtered_fields[:11]
-    second_half_fields = filtered_fields[11:]
+    first_half_fields = filtered_fields[:9]
+    second_half_fields = filtered_fields[9:]
 
     stylesheet = getSampleStyleSheet()
     normal_style = stylesheet['Normal']

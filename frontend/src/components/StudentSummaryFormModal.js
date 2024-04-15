@@ -32,10 +32,8 @@ const emptyProductTemplate = {
     ProductNumber: "",
     ProductName: "",
     Date: null,
-    WholeLife: "",
-    Endowment: "",
-    Term: "",
-    InvLinked: "",
+    Type: "",
+    BasicSum: "",
     TotalDeathCoverage: "",
     TotalPermanentDisability: "",
     EarlyCriticalIllness: "",
@@ -64,10 +62,7 @@ const productFieldLimits = {
     SinglePaymentAmount: 10,
     YearlyPaymentAmount: 10,
     MaturityPremiumEndDate: 100,
-    WholeLife: 10,
-    Endowment: 10,
-    Term: 10,
-    InvLinked: 10,
+    BasicSum: 10,
     TotalDeathCoverage: 10,
     TotalPermanentDisability: 10,
     EarlyCriticalIllness: 10,
@@ -101,6 +96,7 @@ const yearlyModes = [
     "CPF-MA (Yearly)",
 ];
 const modeOptions = ["", ...singleModes, ...yearlyModes];
+const typeOptions = ["", "Whole Life", "Endowment", "Term", "Inv. Linked"];
 
 const StudentSummaryFormModal = ({
     student,
@@ -219,10 +215,7 @@ const StudentSummaryFormModal = ({
 
     const validateFields = () => {
         const productDecimalFields = [
-            "WholeLife",
-            "Endowment",
-            "Term",
-            "InvLinked",
+            "BasicSum",
             "TotalDeathCoverage",
             "TotalPermanentDisability",
             "EarlyCriticalIllness",
@@ -649,6 +642,40 @@ const StudentSummaryFormModal = ({
                                             yearDropdownItemNumber={40}
                                             scrollableYearDropdown
                                         />
+                                    </Form.Group>
+                                );
+                            }
+
+                            if (field === "Type") {
+                                return (
+                                    <Form.Group key={field} className="mb-3">
+                                        <Form.Label>{label}</Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            name={field}
+                                            value={
+                                                products[currentPage][field] ||
+                                                ""
+                                            }
+                                            onChange={handleProductChange}
+                                        >
+                                            {typeOptions.map(
+                                                (optionValue, index) => {
+                                                    const label =
+                                                        optionValue === ""
+                                                            ? "Select an option"
+                                                            : optionValue;
+                                                    return (
+                                                        <option
+                                                            key={index}
+                                                            value={optionValue}
+                                                        >
+                                                            {label}
+                                                        </option>
+                                                    );
+                                                }
+                                            )}
+                                        </Form.Control>
                                     </Form.Group>
                                 );
                             }

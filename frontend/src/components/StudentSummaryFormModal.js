@@ -291,6 +291,16 @@ const StudentSummaryFormModal = ({
                 product["PaymentEndDate"] = null;
             }
 
+            if (
+                (product["Mode"].includes("Yearly") ||
+                    product["Mode"].includes("Monthly")) &&
+                product["PaymentEndDate"] === null
+            ) {
+                return `Product ${
+                    i + 1
+                }: Payment End Date must be in the format YYYY-MM-DD.`;
+            }
+
             if (!isDateValid(product["Date"])) {
                 return `Product ${
                     i + 1

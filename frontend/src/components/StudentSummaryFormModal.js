@@ -242,6 +242,14 @@ const StudentSummaryFormModal = ({
             "MaturityPremiumEndDate",
             ...productDecimalFields,
         ];
+        
+        const cover = agent[0]
+ 
+        for (const key in cover) {
+            if (cover[key].trim() === "") {
+                return `Please fill out the ${key} field.`;
+            }
+        }
 
         for (let i = 0; i < products.length; i++) {
             const product = products[i];
@@ -386,15 +394,30 @@ const StudentSummaryFormModal = ({
     };
 
     const addNewProduct = () => {
+        const validationMessage = validateFields();
+        if (validationMessage !== "") {
+            alert(validationMessage);
+            return;
+        }
         setProducts([...products, { ...emptyProductTemplate }]);
         setCurrentPage(products.length);
     };
 
     const goToPreviousItem = () => {
+        const validationMessage = validateFields();
+        if (validationMessage !== "") {
+            alert(validationMessage);
+            return;
+        }
         setCurrentPage(currentPage - 1);
     };
 
     const goToNextItem = () => {
+        const validationMessage = validateFields();
+        if (validationMessage !== "") {
+            alert(validationMessage);
+            return;
+        }
         setCurrentPage(currentPage + 1);
     };
 
@@ -411,15 +434,30 @@ const StudentSummaryFormModal = ({
     };
 
     const switchToAgent = () => {
+        const validationMessage = validateFields();
+        if (validationMessage !== "") {
+            alert(validationMessage);
+            return;
+        }
         setStage("agent");
     };
 
     const switchToFuturePlans = () => {
+        const validationMessage = validateFields();
+        if (validationMessage !== "") {
+            alert(validationMessage);
+            return;
+        }
         setStage("futurePlans");
         setCurrentPage(0);
     };
 
     const switchToProducts = () => {
+        const validationMessage = validateFields();
+        if (validationMessage !== "") {
+            alert(validationMessage);
+            return;
+        }
         setStage("products");
         setCurrentPage(products.length - 1);
     };
@@ -846,9 +884,6 @@ const StudentSummaryFormModal = ({
                             }
 
                             if (field === "PremiumPayoutYear") {
-                                console.log(
-                                    products[currentPage]["PremiumPayoutMode"]
-                                );
                                 const currentYear = new Date().getFullYear();
                                 const startYear = currentYear - 50;
                                 const endYear = currentYear + 25;

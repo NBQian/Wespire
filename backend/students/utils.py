@@ -544,6 +544,16 @@ def add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone):
 
     # Calculate width of text1 to center it
     text1_width = pdf.get_string_width(text1)
+    text2_width = pdf.get_string_width(text2)
+
+    text3_width = pdf.get_string_width(text3)
+
+    text4_width = pdf.get_string_width(text4)
+
+    text5_width = pdf.get_string_width(text5)
+
+    text6_width = pdf.get_string_width(text6)
+
     page_width = pdf.w  # Width of the current page
     x1 = (page_width - text1_width) / 2  # Center the text
 
@@ -556,26 +566,27 @@ def add_cover_page_text(pdf, client_name, user_name, email, MAS, title, phone):
     pdf.set_text_color(r, g, b)
     # For text2, position as previously defined (unchanged from your original)
     x2, y2, lineDiff, linediff = 25, 265, 10, 7  # Assuming y2 is also in mm
-    
+     
     pdf.set_xy(x2, y2)
     pdf.set_font('Arial', 'B', 20)
-    pdf.cell(text1_width, 10, text2, 0, 1, 'L')
+    pdf.cell(text2_width, 10, text2, 0, 1, 'L')
 
     pdf.set_xy(x2, y2 + lineDiff)
     pdf.set_font('Arial', 'B', 12)
-    pdf.cell(text1_width, 10, text3, 0, 1, 'L')
+    pdf.cell(text3_width, 10, text3, 0, 1, 'L')
 
 
     pdf.set_font('Arial', 'B', 9.7)
 
     pdf.set_xy(140, y2)
-    pdf.cell(text1_width, 10, text5, 0, 1, 'R')
+    pdf.cell(text6_width, 10, text5, 0, 1, 'R')
 
     pdf.set_xy(140, y2 + linediff)
-    pdf.cell(text1_width, 10, text6, 0, 1, 'R')
+    pdf.cell(text6_width, 10, text6, 0, 1, 'R')
 
     pdf.set_xy(140, y2 + 2 * linediff)
-    pdf.cell(text1_width, 10, text4, 0, 1, 'R')
+    pdf.cell(text6_width, 10, text4, 0, 1, 'R')
+
 
 
 def camel_case_to_title(camel_case_str):

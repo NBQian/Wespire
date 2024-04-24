@@ -89,12 +89,7 @@ const futurePlanTypes = [
 ];
 
 const singleModes = ["CPF-OA (Single)", "SRS (Single)", "Cash (Single)"];
-const yearlyModes = [
-    "Cash (Yearly)",
-    "Cash (Monthly)",
-    "Cash (Yearly)",
-    "CPF-MA (Yearly)",
-];
+const yearlyModes = ["Cash (Yearly)", "Cash (Monthly)", "CPF-MA (Yearly)"];
 const modeOptions = ["", ...singleModes, ...yearlyModes];
 const typeOptions = ["", "Whole Life", "Endowment", "Term", "Inv. Linked"];
 
@@ -242,9 +237,9 @@ const StudentSummaryFormModal = ({
             "MaturityPremiumEndDate",
             ...productDecimalFields,
         ];
-        
-        const cover = agent[0]
- 
+
+        const cover = agent[0];
+
         for (const key in cover) {
             if (cover[key].trim() === "") {
                 return `Please fill out the ${key} field.`;

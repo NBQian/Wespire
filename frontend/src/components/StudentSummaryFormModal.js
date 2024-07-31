@@ -14,6 +14,7 @@ import {
 } from "../services/FuturePlanServices";
 import {
     addStudentSummary,
+    getStudentSummaryById,
     updateStudentSummary,
 } from "../services/StudentSummaryService";
 import ReactDatePicker from "react-datepicker";
@@ -128,6 +129,12 @@ const StudentSummaryFormModal = ({
             const savedAgentData = localStorage.getItem("agentData");
             if (savedAgentData) {
                 setAgent([JSON.parse(savedAgentData)]);
+            } else if (summary && summary.id) {
+                const fetchCurrAgentInfo = async () => {
+                    const fetchedSummary = await getStudentSummaryById(
+                        summary.id
+                    );
+                };
             } else {
                 setAgent([emptySummaryTemplate]); // Reset to empty template if no saved data
             }
@@ -225,6 +232,7 @@ const StudentSummaryFormModal = ({
 
         const excludedFields = [
             "Company",
+            "Type",
             "ProductNumber",
             "ProductName",
             "Date",
@@ -448,11 +456,11 @@ const StudentSummaryFormModal = ({
     };
 
     const switchToProducts = () => {
-        const validationMessage = validateFields();
-        if (validationMessage !== "") {
-            alert(validationMessage);
-            return;
-        }
+        // const validationMessage = validateFields();
+        // if (validationMessage !== "") {
+        //     alert(validationMessage);
+        //     return;
+        // }
         setStage("products");
         setCurrentPage(products.length - 1);
     };

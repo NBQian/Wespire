@@ -82,13 +82,15 @@ The frontend server will start at http://localhost:3000.
    Visit http://localhost:3000 in your web browser.
    <img width="1728" alt="image" src="https://github.com/user-attachments/assets/30b6cd40-e088-4c49-80cc-0940678fb485">
 
-3. **Login:**
-  Register a new account using your email, or 
-	3.	Generate Reports:
-	•	Navigate to the “Create Report” section.
-	•	Enter the required data and select the desired template.
-	•	Preview and export the report.
+2. **Login:**
+  Register a new account using your email, or use the details of the superuser to login.
 
-   
-
-   
+3. **Add a New Client**
+   Navigate to the Clients page and add a new client:
+   ![image](https://github.com/user-attachments/assets/db39ce0e-ad79-49c7-8443-8b89aa64ec2a)
+4. **Generate a Client Report**
+   Now, you can select a client you want to create a summary report for and enter the details:
+   ![image](https://github.com/user-attachments/assets/553a89d6-6b0d-4023-8514-020e3ccb556d)
+5. **View Reports**
+   To view a report, navigate to the Summaries page, select a report, and click "Download PDF".
+   ![image](https://github.com/user-attachments/assets/2463e665-fce4-47de-8f88-8e708612cc22)
